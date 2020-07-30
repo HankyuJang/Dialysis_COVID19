@@ -1,10 +1,17 @@
+"""
+Author: Hankyu Jang 
+Email: hankyu-jang@uiowa.edu
+Last Modified: July, 2020
+
+Description: This script generates instantaneous network statistics
+"""
+
 import argparse
 # import igraph
 import pandas as pd
 import numpy as np
 from graph_statistics import *
 import networkx as nx
-from tqdm import tqdm
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dialysis Unit')
@@ -53,7 +60,7 @@ if __name__ == "__main__":
 
     sunday_cnt = 0
     degree_zero_cnt = 0
-    for d in tqdm(range(n_days)):
+    for d in range(n_days):
     # for d in [0]:
         if d in [6, 13, 20, 27]:
             sunday_cnt += 1

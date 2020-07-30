@@ -353,7 +353,9 @@ if __name__ == "__main__":
     df_st = pd.read_csv("data/station_0ft.csv")
     station_x, station_y = preprocess_st(df_st)
 
-    filename_hcw = "LatentPositionsData/latent_positions_day_{}.csv".format(day)
+    filename_hcw = "latent_positions_day_{}.csv".format(day)
+    # Uncomment following line if you're using data stored in the server
+    # filename_hcw = "LatentPositionsData/latent_positions_day_{}.csv".format(day)
     df_hcw = preprocess_hcw_positions(pd.read_csv(path + filename_hcw))
 
     max_time = df_hcw.time.max()
