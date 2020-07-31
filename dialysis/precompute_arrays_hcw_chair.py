@@ -32,7 +32,16 @@ if __name__ == "__main__":
     hcw_hcw_contact_both_center = npzfile["hcw_hcw_contact_both_center"]
     npzfile.close()
 
-    hcw_chair_dist = np.load("data/hcw_chair_distance_day{}.npy".format(day))
+    n_hcw = hcw_hcw_contact.shape[0]
+    n_chair = 9
+    max_time = hcw_hcw_contact.shape[-1]
+
+    # hcw_chair_dist = np.load("data/hcw_chair_distance_day{}.npy".format(day))
+    hcw_chair_dist = np.zeros((n_hcw, n_chair, max_time))
+    for h in range(n_hcw):
+        df_chair_dist = pd.read_csv("data/HCP_chair_distance/day{}/HCP{}_chair_distance_day{}.csv".format(day, h+1, day))
+        hcw_chair_dist[h,:,:] = df_chair_dist.values.T
+
     hcw_chair_prox = hcw_chair_dist <= 1
 
     n_hcw = hcw_chair_prox.shape[0]
