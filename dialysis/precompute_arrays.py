@@ -251,14 +251,14 @@ def get_patient_arrays(simulation_length, n_hcw, max_time, morning, afternoon, n
     # t_in_s, t_in_e, t_out_s, t_out_e = npzfile["t_in_s"], npzfile["t_in_e"], npzfile["t_out_s"], npzfile["t_out_e"]
     # chairs, chair_dwell_time  = npzfile["chairs"], npzfile["chair_dwell_time"]
 
-    df_dialysis_session = pd.read_csv("data/dialysis_sessions/csv/patient_info_day_{}.csv".format(day))
+    df_dialysis_session = pd.read_csv("data/dialysis_sessions/patient_info_day_{}.csv".format(day))
     t_in_s = df_dialysis_session.t_in_s.values 
     t_in_e = df_dialysis_session.t_in_e.values 
     t_out_s = df_dialysis_session.t_out_s.values 
     t_out_e = df_dialysis_session.t_out_e.values 
     chairs = df_dialysis_session.chair.values 
 
-    df_patient_at_chair_likelihood = pd.read_csv("data/dialysis_sessions/csv/patient_at_chair_likelihood_day_{}.csv".format(day))
+    df_patient_at_chair_likelihood = pd.read_csv("data/dialysis_sessions/patient_at_chair_likelihood_day_{}.csv".format(day))
     chair_dwell_time = df_patient_at_chair_likelihood.values.T
 
     # there are 2 sessions (MWF, TThS)
