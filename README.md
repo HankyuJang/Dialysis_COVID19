@@ -2,7 +2,7 @@
 
 ## Installation
 
-I shared conda environment that contains the packages used in this project.
+The Python packages used in this project are installed in a conda environment.
 Create environment from these files (`*.yml`).
 Once this is done, no additional installation of packages is needed.
 
@@ -20,6 +20,11 @@ If for some reason you fail to create conda environments with above `*.yml` file
 - matplotlib
 - networkx
 - python-igraph
+
+## Data
+
+- Download data from the following data repository: [somewhere..]()
+- Place the data in the `dialysis/data/`
 
 ## Run the simulations to generate results in the paper
 
@@ -43,11 +48,11 @@ python compute_alpha.py
 ```
 
 - Run COVID-19 simulation
-This takes roughly one day to run using Vinci server (used 60 cores)
+This takes roughly one day to run using Vinci server (used 60 cores).
 Change the value of `cpu` to the number of CPU available in your device.
 For each intervention setting, disease model, R0, and infection source (patient or HCP), 
 I saved daily infection count, transmission routes, daily population (in case for addition HCP to unit), R0, and the generation time.
-All of these are saved in `dialysis/results/day10` directory with filenames of `final_scenario0.npz` (Scenario 1 in the paper) and `final_scenario1.npz` (Scenario 2 in the paper)
+All of these are saved in `dialysis/results/day10/` directory with filenames of `final_scenario0.npz` (Scenario 1 in the paper) and `final_scenario1.npz` (Scenario 2 in the paper)
 ```
 python COVID19_dialysis_final.py -cpu 60
 ```
@@ -87,16 +92,8 @@ cd dialysis
 python draw_contact_network.py
 ```
 
-## Data
-
-dialysis unit, sensor ...
-
-## Agent based simulation
-
-...
-
 ## Cite
-
+This project is currently in submission for the peer-review for the PLOS Computational Biology.
 ```
 ...
 ```
