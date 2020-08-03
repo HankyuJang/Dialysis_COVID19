@@ -1,7 +1,7 @@
 """
 Author: Hankyu Jang 
 Email: hankyu-jang@uiowa.edu
-Last Modified: July, 2020
+Last Modified: Aug, 2020
 
 Description: This script precomputes contact in dialysis unit
 
@@ -170,25 +170,23 @@ def get_hcw_arrays(n_hcw, max_time):
 
     return hcw_hcw_contact, hcw_hcw_contact_both_center, hcw_handwash_prox, hcw_center_prox, hcw_at_center 
 
-def choose_time(chair_dwell_time, c, start, end):
-    a = chair_dwell_time[c, start:end]
-    p = a / a.sum()
-    return start + np.random.choice(a=a, p=p)
+def choose_time(start, end):
+    return rd.randint(start, end)
 
 # Generate numpy arrays that have relevant patient information for the simulation
 # 1) patient_in_chair: boolean numpy array that denote whether the chair is occupied by a patient over the course of a day
 # 2) t_in: patient arrival time index
 # 3) t_out: patient leaving time index
 # 4) chairs: chair corresponding t_in and t_out
-def get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, chair_dwell_time, n_chair, max_time):
+def get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, n_chair, max_time):
     n_patient = len(chairs)
     patient_in_chair = np.zeros((n_chair, max_time)).astype(bool)
     t_in = np.zeros(t_in_s.shape).astype(int)
     t_out = np.zeros(t_out_s.shape).astype(int)
 
     for idx in range(n_patient):
-        t_incoming = choose_time(chair_dwell_time, chairs[idx], t_in_s[idx], t_in_e[idx])
-        t_leaving = choose_time(chair_dwell_time, chairs[idx], t_out_s[idx], t_out_e[idx])
+        t_incoming = choose_time(t_in_s[idx], t_in_e[idx])
+        t_leaving = choose_time(t_out_s[idx], t_out_e[idx])
         patient_in_chair[chairs[idx], t_incoming: t_leaving] = True
         t_in[idx] = t_incoming
         t_out[idx] = t_leaving
@@ -246,20 +244,12 @@ def get_patient_arrays(simulation_length, n_hcw, max_time, morning, afternoon, n
 
     hcw_chair_prox = hcw_chair_dist <= contact_distance
 
-    # These are precomputed numpy arrays that will be used to sample patients
-    # npzfile = np.load("data/patient_info_day{}.npz".format(day))
-    # t_in_s, t_in_e, t_out_s, t_out_e = npzfile["t_in_s"], npzfile["t_in_e"], npzfile["t_out_s"], npzfile["t_out_e"]
-    # chairs, chair_dwell_time  = npzfile["chairs"], npzfile["chair_dwell_time"]
-
     df_dialysis_session = pd.read_csv("data/dialysis_sessions/patient_info_day_{}.csv".format(day))
     t_in_s = df_dialysis_session.t_in_s.values 
     t_in_e = df_dialysis_session.t_in_e.values 
     t_out_s = df_dialysis_session.t_out_s.values 
     t_out_e = df_dialysis_session.t_out_e.values 
     chairs = df_dialysis_session.chair.values 
-
-    df_patient_at_chair_likelihood = pd.read_csv("data/dialysis_sessions/patient_at_chair_likelihood_day_{}.csv".format(day))
-    chair_dwell_time = df_patient_at_chair_likelihood.values.T
 
     # there are 2 sessions (MWF, TThS)
     n_patient = chairs.shape[0] * 2
@@ -274,13 +264,13 @@ def get_patient_arrays(simulation_length, n_hcw, max_time, morning, afternoon, n
         ###################################################################
         # M,W,F
         if d % 7 in {0, 2, 4}:
-            patient_in_chair, t_in, t_out = get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, chair_dwell_time, n_chair, max_time)
+            patient_in_chair, t_in, t_out = get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, n_chair, max_time)
             patient_placement = patient_scheduling("MWF", morning, afternoon, n_patient, t_in, chairs)
 
         ###################################################################
         # T,Th,S
         elif d % 7 in {1, 3, 5}:
-            patient_in_chair, t_in, t_out = get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, chair_dwell_time, n_chair, max_time)
+            patient_in_chair, t_in, t_out = get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, n_chair, max_time)
             patient_placement = patient_scheduling("TThS", morning, afternoon, n_patient, t_in, chairs)
 
         ###################################################################
