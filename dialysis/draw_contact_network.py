@@ -1,11 +1,3 @@
-"""
-Author: Hankyu Jang 
-Email: hankyu-jang@uiowa.edu
-Last Modified: July, 2020
-
-Description: This script draws the contact network where the edges are aggregated over the timespan of 30 days
-"""
-
 import argparse
 import igraph
 import pandas as pd
@@ -97,4 +89,4 @@ if __name__ == "__main__":
     visual_style["edge_color"] = g.es["color"]
     visual_style["layout"] = g.layout("fr")
 
-    igraph.plot(g, "plots/igraph/contact_network.pdf", **visual_style)
+    igraph.plot(g, "plots/contact_network/contact_network_day_{}.pdf".format(day), **visual_style)

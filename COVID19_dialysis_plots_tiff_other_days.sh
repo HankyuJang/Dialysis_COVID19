@@ -1,0 +1,10 @@
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 2 -s 0
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 2 -s 1
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 6 -s 0
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 6 -s 1
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 7 -s 0
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 7 -s 1
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 8 -s 0
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 8 -s 1
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 9 -s 0
+python -W ignore COVID19_dialysis_plots_tiff_other_days.py -day 9 -s 1
