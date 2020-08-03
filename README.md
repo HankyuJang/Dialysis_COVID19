@@ -1,5 +1,7 @@
 # COVID-19 Modeling and Non-Pharmaceutical Interventions in a Dialysis Unit
 
+This document provides a step-by-step guide to replicate results in the paper.
+
 ## Installation
 
 The Python packages used in this project are installed in a conda environment.
