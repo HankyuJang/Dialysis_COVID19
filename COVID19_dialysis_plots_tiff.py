@@ -28,9 +28,9 @@ def countplot(infection_array):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Draw cumulative incidence')
     parser.add_argument('-day', '--day', type=int, default=10,
-                        help= 'day of csv file that contains the latent positions of hcws')
+                        help= 'day of csv file that contains the latent positions of HCPs')
     parser.add_argument('-s', '--scenario', type=int, default=0,
-                        help= 'Infection source: scenario 0 = patient, scenario 1 = hcw')
+                        help= 'Infection source: scenario 0 = patient, scenario 1 = HCP')
     args = parser.parse_args()
 
     day = args.day
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     if s == 0:
         source = "patient"
     elif s == 1:
-        source = "hcw"
+        source = "HCP"
 
     ############################################################################################################3
     # Read npzfile
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     # >>> B_n_inf_rec.shape
     # (500, 4, 3, 3, 4, 30)
     # dim-3: [during incubation period, during symptomatic period, outside source (coming in infected)]
-    # dim-2: [hcw_infected, patient_infected, hcw_recovered, patient_recovered]
+    # dim-2: [HCP_infected, patient_infected, HCP_recovered, patient_recovered]
     # dim-1: simulation period
     ############################################################################################################3
     # >>> B_transmission_route.shape
@@ -274,7 +274,7 @@ if __name__ == "__main__":
 
             # # R0 = np.mean(B_R0, axis=0)[i,j]
             # R0 = target_R0[j]
-            # plt.title("Total Infection Counts on 500 Repetitions\nSource: {}, D: {}, target R0: {}".format(source, D, R0))
+            # plt.title("Total Infection Counts on 500 Repetitions\nSource: {}, D: {}, R0: {}".format(source, D, R0))
             # plt.xlabel("Number of infections for each simulation")
             # plt.legend(handles=[p1,p2,p3,p4,p5], loc='best')
             # plt.savefig("dialysis/tiff/plots/B_N0_countplot_D{}_R0{}_scenario{}.tif".format(i, R0, s))
@@ -318,17 +318,17 @@ if __name__ == "__main__":
             # _, y_temp = countplot(H2P2_T_infection.sum(axis=-1)[:,i,j])
             # y_array = np.zeros((x_array.shape)).astype(int)
             # y_array[:y_temp.shape[0]] = y_temp
-            # p5,=plt.plot(x_array, y_array, label="M P:surgical H:N95", color="C4", zorder=8)
+            # p5,=plt.plot(x_array, y_array, label="M P:surgical, H:N95", color="C4", zorder=8)
 
             # _, y_temp = countplot(H12P2_T_infection.sum(axis=-1)[:,i,j])
             # y_array = np.zeros((x_array.shape)).astype(int)
             # y_array[:y_temp.shape[0]] = y_temp
-            # p6,=plt.plot(x_array, y_array, label="AS M P:surgical H:N95 (HCP:+{:.1f})".format(H12P2_replaced_HCPs[i,j,0]), color="C5", zorder=9)
+            # p6,=plt.plot(x_array, y_array, label="AS M P:surgical, H:N95 (HCP:+{:.1f})".format(H12P2_replaced_HCPs[i,j,0]), color="C5", zorder=9)
 
             # # R0 = np.mean(B_R0, axis=0)[i,j]
             # R0 = target_R0[j]
-            # # plt.title("Total Infection Counts on 500 Repetitions\nSource: {}, D: {}, target R0: {}".format(source, D, R0))
-            # plt.title("Simulation Counts by Total Infection over 500 Repetitions \nSource: {}, D: {}, target R0: {}".format(source, D, R0))
+            # # plt.title("Total Infection Counts on 500 Repetitions\nSource: {}, D: {}, R0: {}".format(source, D, R0))
+            # plt.title("Simulation Counts by Total Infection over 500 Repetitions \nSource: {}, D: {}, R0: {}".format(source, D, R0))
             # plt.xlabel("Number of infections for each simulation")
             # plt.ylabel("Simulation count")
             # plt.legend(handles=[p1,p2,p3,p4,p5,p6], loc='best')
@@ -382,8 +382,8 @@ if __name__ == "__main__":
 
             # # R0 = np.mean(B_R0, axis=0)[i,j]
             # R0 = target_R0[j]
-            # # plt.title("Total Infection Counts on 500 Repetitions\nSource: {}, D: {}, target R0: {}".format(source, D, R0))
-            # plt.title("Simulation counts by attack rate over 500 Repetitions \nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            # # plt.title("Total Infection Counts on 500 Repetitions\nSource: {}, D: {}, R0: {}".format(source, D, R0))
+            # plt.title("Simulation counts by attack rate over 500 Repetitions \nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             # # plt.xlabel("Number of infections for each simulation")
             # plt.xlabel("Attack rate")
             # plt.ylabel("Simulation count")
@@ -412,9 +412,10 @@ if __name__ == "__main__":
             plt.hist([B_ar, Bp_ar, Bpp_ar, Bppp_ar], bins, alpha=0.5, label=label_list)
 
             R0 = target_R0[j]
-            plt.title("Simulation counts by attack rate over 500 Repetitions \nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Simulation counts by attack rate over 500 Repetitions \nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Attack rate")
             plt.ylabel("Simulation count")
+            plt.ylim(0, 500)
             plt.legend(loc="best")
             plt.grid(which='major', axis='both',linestyle=':')
             # plt.grid(which='minor', axis='x',linestyle=':')
@@ -424,6 +425,8 @@ if __name__ == "__main__":
             plt.savefig("dialysis/tiff/plots/day{}/histogram_D{}_R0{}_scenario{}.tif".format(day, i, R0, s), dpi=300)
             # plt.savefig("dialysis/tiff/plots/day{}/histogram_D{}_R0{}_scenario{}.tif".format(day, i, R0, s))
             plt.close()
+
+
 
     ############################################################################################################3
     # Figures - Social distancing
@@ -441,7 +444,7 @@ if __name__ == "__main__":
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
@@ -467,7 +470,7 @@ if __name__ == "__main__":
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
@@ -492,7 +495,7 @@ if __name__ == "__main__":
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
@@ -514,7 +517,7 @@ if __name__ == "__main__":
 
             # # R0 = np.median(B_R0, axis=0)[i,j]
             # R0 = target_R0[j]
-            # plt.title("Median cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            # plt.title("Median cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             # plt.xlabel("Time (in days)")
             # plt.ylabel("Attack rate")
             # plt.ylim(0,1)
@@ -533,13 +536,13 @@ if __name__ == "__main__":
         for j, alpha in enumerate(sus_array[i]):
             # Cum Patient Infection
             p1,=plt.plot(np.arange(1, simulation_period+1), np.mean(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
-            p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(P2_T_cum_attack_rate, axis=0)[i,j], label="Patient:surgical HCP:x", color="C1", zorder=5)
-            p3,=plt.plot(np.arange(1, simulation_period+1), np.mean(H2P2v2_T_cum_attack_rate, axis=0)[i,j], label="Patient:surgical HCP:surgical", color="C2", zorder=6)
-            p4,=plt.plot(np.arange(1, simulation_period+1), np.mean(H2P2_T_cum_attack_rate, axis=0)[i,j], label="Patient:surgical HCP:N95", color="C3", zorder=7)
+            p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(P2_T_cum_attack_rate, axis=0)[i,j], label="Patient:surgical, HCP:x", color="C1", zorder=5)
+            p3,=plt.plot(np.arange(1, simulation_period+1), np.mean(H2P2v2_T_cum_attack_rate, axis=0)[i,j], label="Patient:surgical, HCP:surgical", color="C2", zorder=6)
+            p4,=plt.plot(np.arange(1, simulation_period+1), np.mean(H2P2_T_cum_attack_rate, axis=0)[i,j], label="Patient:surgical, HCP:N95", color="C3", zorder=7)
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
@@ -555,13 +558,13 @@ if __name__ == "__main__":
         # for j, alpha in enumerate(sus_array[i]):
             # # Cum Patient Infection
             # p1,=plt.plot(np.arange(1, simulation_period+1), np.median(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
-            # p2,=plt.plot(np.arange(1, simulation_period+1), np.median(P2_T_cum_attack_rate, axis=0)[i,j], label="M P:surgical H:x", color="C1", zorder=5)
-            # p3,=plt.plot(np.arange(1, simulation_period+1), np.median(H2P2v2_T_cum_attack_rate, axis=0)[i,j], label="M P:surgical H:surgical", color="C2", zorder=6)
-            # p4,=plt.plot(np.arange(1, simulation_period+1), np.median(H2P2_T_cum_attack_rate, axis=0)[i,j], label="M P:surgical H:N95", color="C3", zorder=7)
+            # p2,=plt.plot(np.arange(1, simulation_period+1), np.median(P2_T_cum_attack_rate, axis=0)[i,j], label="M P:surgical, H:x", color="C1", zorder=5)
+            # p3,=plt.plot(np.arange(1, simulation_period+1), np.median(H2P2v2_T_cum_attack_rate, axis=0)[i,j], label="M P:surgical, H:surgical", color="C2", zorder=6)
+            # p4,=plt.plot(np.arange(1, simulation_period+1), np.median(H2P2_T_cum_attack_rate, axis=0)[i,j], label="M P:surgical, H:N95", color="C3", zorder=7)
 
             # # R0 = np.median(B_R0, axis=0)[i,j]
             # R0 = target_R0[j]
-            # plt.title("Median cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            # plt.title("Median cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             # plt.xlabel("Time (in days)")
             # plt.ylabel("Attack rate")
             # plt.ylim(0,1)
@@ -588,7 +591,7 @@ if __name__ == "__main__":
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
@@ -618,7 +621,7 @@ if __name__ == "__main__":
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
@@ -649,7 +652,7 @@ if __name__ == "__main__":
 
             # # R0 = np.median(B_R0, axis=0)[i,j]
             # R0 = target_R0[j]
-            # plt.title("Median cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            # plt.title("Median cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             # plt.xlabel("Time (in days)")
             # plt.ylabel("Attack rate")
             # plt.ylim(0,1)
@@ -675,9 +678,10 @@ if __name__ == "__main__":
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Cumulative transmission route on Baseline simulation (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Cumulative transmission route on Baseline simulation (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Infection count")
+            plt.ylim(0, 30)
             plt.legend(handles=[p1,p4,p3,p2], loc='best')
             plt.xticks(range(1, 31), xticklabels)
             plt.grid(zorder=0)

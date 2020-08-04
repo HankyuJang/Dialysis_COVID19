@@ -28,9 +28,9 @@ def countplot(infection_array):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Draw cumulative incidence')
     parser.add_argument('-day', '--day', type=int, default=10,
-                        help= 'day of csv file that contains the latent positions of hcws')
+                        help= 'day of csv file that contains the latent positions of HCPs')
     parser.add_argument('-s', '--scenario', type=int, default=0,
-                        help= 'Infection source: scenario 0 = patient, scenario 1 = hcw')
+                        help= 'Infection source: scenario 0 = patient, scenario 1 = HCP')
     args = parser.parse_args()
 
     day = args.day
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     if s == 0:
         source = "patient"
     elif s == 1:
-        source = "hcw"
+        source = "HCP"
 
     ############################################################################################################3
     # Read npzfile
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # >>> B_n_inf_rec.shape
     # (500, 4, 3, 3, 4, 30)
     # dim-3: [during incubation period, during symptomatic period, outside source (coming in infected)]
-    # dim-2: [hcw_infected, patient_infected, hcw_recovered, patient_recovered]
+    # dim-2: [HCP_infected, patient_infected, HCP_recovered, patient_recovered]
     # dim-1: simulation period
     ############################################################################################################3
     # >>> B_transmission_route.shape
@@ -170,7 +170,7 @@ if __name__ == "__main__":
             plt.hist([B_ar, Bp_ar, Bpp_ar, Bppp_ar], bins, alpha=0.5, label=label_list)
 
             R0 = target_R0[j]
-            plt.title("Simulation counts by attack rate over 500 Repetitions \nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Simulation counts by attack rate over 500 Repetitions \nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Attack rate")
             plt.ylabel("Simulation count")
             plt.legend(loc="best")
@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Mean cumulative attack rate (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
-            plt.title("Cumulative transmission route on Baseline simulation (30 days)\nSource: {}, disease: {}, target R0: {}".format(source, D, R0))
+            plt.title("Cumulative transmission route on Baseline simulation (30 days)\nSource: {}, shedding: {}, R0: {}".format(source, D, R0))
             plt.xlabel("Time (in days)")
             plt.ylabel("Infection count")
             plt.legend(handles=[p1,p4,p3,p2], loc='best')
