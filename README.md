@@ -100,7 +100,7 @@ cd dialysis
 python draw_contact_network.py
 ```
 
-## Generate results in the Supporting Information section
+## Generate results on the other days
 
 - Use `Dialysis_COVID19` for the conda environment
 ```

@@ -3,14 +3,13 @@ COVID19 SIMULATOR
 
 Author: Hankyu Jang 
 Email: hankyu-jang@uiowa.edu
-Last Modified: June, 2020 
+Last Modified: Aug, 2020 
 
 Description: This simulation class simulates COVID19 on given contact network
 
-Each individual has its own incubation period and symptomatic period
-
-difference from v3: Bpp now has one additional intervention that uses limited supply of N95 respirators.
-difference from v4: H3P1 is different that the intervention is imposed on the 'first symptomatic agent'.
+Each individual has its own 
+presymptomatic period (sampled from geometric distribution with p=1/5) and 
+symptomatic period(sampled from geometric distribution with p=1/7)
 
 On the first day, 
 either one patient in morning_patients array gets infected 
@@ -82,7 +81,7 @@ class Simulation:
         # Dim1: the HCW's disease status
         self.hcw_quarantine_status = np.zeros((2, self.n_hcw)).astype(int) - 1
 
-        # dim0: [during incubation period, during symptomatic period, outside source (coming in infected)]
+        # dim0: [during presymptomatic period, during symptomatic period, outside source (coming in infected)]
         # dim1: [hcw_infected, patient_infected, hcw_recovered, patient_recovered]
         self.n_inf_rec = np.zeros((3, 4, self.simulation_period)).astype(int)
         # dim0: [h->p, p->h, h->h, p->p]
@@ -163,11 +162,13 @@ class Simulation:
         patient_asymptomatic = np.random.random(self.n_patient) < self.asymp_rate
         return hcw_asymptomatic, patient_asymptomatic
 
+    # In the previous versions, there were Dtype = 0 or 1, but we removed them in this version
+    # because the shedding models 0 and 1 were unrealistic.
     def get_daily_shedding(self, W, T):
         daily_shedding = np.zeros((W + T))
         if self.Dtype == 2:
             daily_shedding[T-1] = 1
-            # Infectivity during incubation period
+            # Infectivity during presymptomatic period
             for idx in range(T, W + T):
                 daily_shedding[idx] = 1/7.7 * daily_shedding[idx-1]
             # Infectivity during infectious period
@@ -176,7 +177,7 @@ class Simulation:
         # exp/exp: 35% asymptomatic spread
         elif self.Dtype == 3:
             daily_shedding[T-1] = 1
-            # Infectivity during incubation period
+            # Infectivity during presymptomatic period
             for idx in range(T, W + T):
                 daily_shedding[idx] = 1/1.592 * daily_shedding[idx-1]
             # Infectivity during infectious period
@@ -222,9 +223,9 @@ class Simulation:
             self.hcw_status[idx] = self.hcw_W[idx] + self.hcw_T[idx] - 1
 
     def add_infection_count(self, when, who, day):
-        if when == "incubation":
+        if when == "presymptomatic":
             i = 0
-        elif when == "after_incubation":
+        elif when == "symptomatic":
             i = 1
         elif when == "outside_source":
             i = 2
@@ -305,8 +306,8 @@ class Simulation:
             # self.print_hcw_W_T()
 
     def patient_isolation_hcw_early_replacement(self, day, p):
-        # Get top k hcws
-        hcw_patient_contact_sum = self.hcw_patient_contact[:self.patient_W[p],:,:,:].sum(axis=(0,-1))
+        # Get top k hcws (select HCWs with most exposure to the patient since the first day
+        hcw_patient_contact_sum = self.hcw_patient_contact[:day,:,:,:].sum(axis=(0,-1))
         contact_with_source = hcw_patient_contact_sum[:,p]
         top_k_hcws = np.argpartition(contact_with_source, -self.k)[-self.k:]
         # Isolate the source patient (remove all contacts with this patient)
@@ -332,11 +333,11 @@ class Simulation:
             if self.hcw_status[source_idx] >= 0 and self.hcw_status[target_idx] < 0:
                 if rd.random() < self.hcw_daily_shedding[source_idx][self.hcw_status[source_idx]]:
                     self.hcw_status[target_idx] = self.hcw_W[target_idx] + self.hcw_T[target_idx] - 1
-                    # Transmission during incubation period
+                    # Transmission during presymptomatic period
                     if self.hcw_status[source_idx] >= self.hcw_T[source_idx]:
-                        self.add_infection_count("incubation", "hcw", day)
+                        self.add_infection_count("presymptomatic", "hcw", day)
                     else:
-                        self.add_infection_count("after_incubation", "hcw", day)
+                        self.add_infection_count("symptomatic", "hcw", day)
                     self.add_transmission_route("hcw", "hcw", day)
                     if source_idx == self.hcw_infection_source:
                         self.R0 += 1
@@ -347,11 +348,11 @@ class Simulation:
             if self.hcw_status[source_idx] >= 0 and self.patient_status[target_idx] < 0:
                 if rd.random() < self.hcw_daily_shedding[source_idx][self.hcw_status[source_idx]]:
                     self.patient_status[target_idx] = self.patient_W[target_idx] + self.patient_T[target_idx] - 1
-                    # Transmission during incubation period
+                    # Transmission during presymptomatic period
                     if self.hcw_status[source_idx] >= self.hcw_T[source_idx]:
-                        self.add_infection_count("incubation", "patient", day)
+                        self.add_infection_count("presymptomatic", "patient", day)
                     else:
-                        self.add_infection_count("after_incubation", "patient", day)
+                        self.add_infection_count("symptomatic", "patient", day)
                     self.add_transmission_route("hcw", "patient", day)
                     if source_idx == self.hcw_infection_source:
                         self.R0 += 1
@@ -362,11 +363,11 @@ class Simulation:
             if self.patient_status[source_idx] >= 0 and self.hcw_status[target_idx] < 0:
                 if rd.random() < self.patient_daily_shedding[source_idx][self.patient_status[source_idx]]:
                     self.hcw_status[target_idx] = self.hcw_W[target_idx] + self.hcw_T[target_idx] - 1
-                    # Transmission during incubation period
+                    # Transmission during presymptomatic period
                     if self.patient_status[source_idx] >= self.patient_T[source_idx]:
-                        self.add_infection_count("incubation", "hcw", day)
+                        self.add_infection_count("presymptomatic", "hcw", day)
                     else:
-                        self.add_infection_count("after_incubation", "hcw", day)
+                        self.add_infection_count("symptomatic", "hcw", day)
                     self.add_transmission_route("patient", "hcw", day)
                     if source_idx == self.patient_infection_source:
                         self.R0 += 1
@@ -377,18 +378,15 @@ class Simulation:
             if self.patient_status[source_idx] >= 0 and self.patient_status[target_idx] < 0:
                 if rd.random() < self.patient_daily_shedding[source_idx][self.patient_status[source_idx]]:
                     self.patient_status[target_idx] = self.patient_W[target_idx] + self.patient_T[target_idx] - 1
-                    # Transmission during incubation period
+                    # Transmission during presymptomatic period
                     if self.patient_status[source_idx] >= self.patient_T[source_idx]:
-                        self.add_infection_count("incubation", "patient", day)
+                        self.add_infection_count("presymptomatic", "patient", day)
                     else:
-                        self.add_infection_count("after_incubation", "patient", day)
+                        self.add_infection_count("symptomatic", "patient", day)
                     self.add_transmission_route("patient", "patient", day)
                     if source_idx == self.patient_infection_source:
                         self.R0 += 1
                         self.generation_time += day
-
-    def any_symptomatic_agents(self):
-        pass
 
     def simulate(self):
         # self.print_hcw_W_T()
@@ -418,16 +416,9 @@ class Simulation:
             self.flag_PI = True
 
         for d in range(self.simulation_period):
-            # print(d)
             ###################################################################
             # Things to be done at the start of each day - Interventions
             ###################################################################
-            # H3P1: As soon as the infection source start shedding (if the source is not asymptomatic)
-            # If source: patient, isolate patient and replace top k hcws
-            # If source: hcw, isolate top patient and replace top k hcws (including the source hcw)
-            # if self.intervention[0,3] and self.intervention[1,1] and d == self.infection_source_W:
-                # self.patient_isolation_hcw_early_replacement(d)
-                # self.N95_days_count = 14
 
             # Intervention on HCW: HCW presenteeism (self-quarantine)
             if self.intervention[0, 0]:
@@ -455,17 +446,8 @@ class Simulation:
             elif self.intervention[0, 2]:
                 self.mask_hcws()
 
-            # if self.intervention[2, 2] and self.N95_days_count < 0 and self.any_symptomatic_agents():
-                # self.N95_days_count = 14
-                # self.unmask_hcws()
-                # self.N95_hcws()
-
-            # if self.intervention[2, 2] and self.N95_days_count == 0:
-                # self.unmask_N95_hcws()
-                # self.mask_hcws()
-
             for t in range(self.max_time):
-                # H3P1
+                # H3P1: early replacement and patient isolation
                 # As soon as a symptomatic patient is detected, replace that patient as well as top k hcws.
                 if self.flag_PI:
                     # if any symptomatic patient is in the unit at that time
