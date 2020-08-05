@@ -25,7 +25,7 @@ If for some reason you fail to create conda environments with above `*.yml` file
 
 ## Data
 
-- Download data from the following data repository: [somewhere..]()
+- Download data from the following data repository: [Healthcare Personnel Movement Data](https://www.kaggle.com/hankyujang/healthcare-personnel-movement-data/)
 - Place the data in the `dialysis/data/`
 
 ## Run the simulations to generate results in the main paper
