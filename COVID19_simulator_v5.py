@@ -8,7 +8,7 @@ Last Modified: Aug, 2020
 Description: This simulation class simulates COVID19 on given contact network
 
 Each individual has its own 
-presymptomatic period (sampled from geometric distribution with p=1/5) and 
+presymptomatic period (sampled from geometric distribution with p=1/6) and 
 symptomatic period(sampled from geometric distribution with p=1/7)
 
 On the first day, 
@@ -21,17 +21,17 @@ import copy
 
 class Simulation:
     def __init__(self,
-            W = 5,
+            W = 6,
             T = 7,
             inf = 1,
-            sus = 0.3,
+            alpha = 0.3, # alpha will be changed for each disease model and for each target R0
             QC = 1,
-            asymp_rate = 0.2,
-            asymp_shedding = 0.5,
-            QS = 6,
+            asymp_rate = 0.4,
+            asymp_shedding = 0.75,
+            QS = 7,
             QT = 14,
-            Dtype = 0,
-            community_attack_rate = 0.0005,
+            Dtype = 2,
+            community_attack_rate = 0.00347, # (525 active cases / 151140 population) in Johnson County as of Aug 5, 2020.
             k = 1,
             mask_efficacy = np.array([0.4, 0.4, 0.93]),
             intervention = None,
@@ -45,7 +45,7 @@ class Simulation:
         self.W = W
         self.T = T
         self.inf = inf
-        self.sus = sus
+        self.alpha = alpha
         self.QC = QC
         self.asymp_rate = asymp_rate
         self.asymp_shedding = asymp_shedding
@@ -109,6 +109,7 @@ class Simulation:
         # Efficacy of mask. reduces inf
         self.hcw_mask_efficacy = self.mask_efficacy[0]
         self.patient_mask_efficacy = self.mask_efficacy[1]
+        # This one is just for implementing Bppp
         self.N95_efficacy = self.mask_efficacy[2]
         # self.patient_wearing_mask = np.zeros((self.n_patient)).astype(bool)
         self.hcw_bad_replacement = np.zeros((self.n_hcw)).astype(bool)
@@ -122,7 +123,7 @@ class Simulation:
     def replacement_hcw_W_T_shedding(self, idx, W, T):
         self.hcw_W[idx] = W
         self.hcw_T[idx] = T
-        self.hcw_daily_shedding[idx] = self.get_daily_shedding(W, T) * self.inf * self.sus 
+        self.hcw_daily_shedding[idx] = self.get_daily_shedding(W, T) * self.inf * self.alpha 
         self.hcw_asymptomatic[idx] = np.random.random() < self.asymp_rate
         if self.hcw_asymptomatic[idx]:
             self.hcw_daily_shedding[idx] = self.hcw_daily_shedding[idx] * self.asymp_shedding
@@ -164,14 +165,17 @@ class Simulation:
 
     # In the previous versions, there were Dtype = 0 or 1, but we removed them in this version
     # because the shedding models 0 and 1 were unrealistic.
+    # Note that whenever an agent is exposed, the index for that agent's daily shedding starts at W+T-1
+    # and the index reduce by 1 per day.
     def get_daily_shedding(self, W, T):
         daily_shedding = np.zeros((W + T))
         if self.Dtype == 2:
             daily_shedding[T-1] = 1
             # Infectivity during presymptomatic period
             for idx in range(T, W + T):
-                daily_shedding[idx] = 1/7.7 * daily_shedding[idx-1]
-            # Infectivity during infectious period
+                # daily_shedding[idx] = 1/7.7 * daily_shedding[idx-1]
+                daily_shedding[idx] = 1/3.0 * daily_shedding[idx-1]
+            # Infectivity during symptomatic period
             for idx in range(T-2, -1, -1):
                 daily_shedding[idx] = 1/1.5 * daily_shedding[idx+1]
         # exp/exp: 35% asymptomatic spread
@@ -179,8 +183,9 @@ class Simulation:
             daily_shedding[T-1] = 1
             # Infectivity during presymptomatic period
             for idx in range(T, W + T):
-                daily_shedding[idx] = 1/1.592 * daily_shedding[idx-1]
-            # Infectivity during infectious period
+                # daily_shedding[idx] = 1/1.62 * daily_shedding[idx-1]
+                daily_shedding[idx] = 1/1.27 * daily_shedding[idx-1]
+            # Infectivity during symptomatic period
             for idx in range(T-2, -1, -1):
                 daily_shedding[idx] = 1/1.5 * daily_shedding[idx+1]
         return daily_shedding
@@ -200,11 +205,11 @@ class Simulation:
         return hcw_daily_shedding, patient_daily_shedding
 
     def adjust_hcw_patient_daily_shedding(self):
-        # Multiply alpha (scaling parameter). alpha substitutes sus in this simulator. inf=1 (no effect)
+        # Multiply alpha (scaling parameter). inf=1 (no effect)
         for h in range(self.n_hcw):
-            self.hcw_daily_shedding[h] = self.hcw_daily_shedding[h] * self.inf * self.sus 
+            self.hcw_daily_shedding[h] = self.hcw_daily_shedding[h] * self.inf * self.alpha 
         for p in range(self.n_patient):
-            self.patient_daily_shedding[p] = self.patient_daily_shedding[p] * self.inf * self.sus 
+            self.patient_daily_shedding[p] = self.patient_daily_shedding[p] * self.inf * self.alpha 
         # reduce shedding of asymptomatic agents
         for h in range(self.n_hcw):
             if self.hcw_asymptomatic[h]:
@@ -216,6 +221,7 @@ class Simulation:
     def hcw_daily_replacement(self):
         pass
 
+    # Upon exposure, update the status of the agent.
     def update_status(self, who, idx):
         if who == "patient":
             self.patient_status[idx] = self.patient_W[idx] + self.patient_T[idx] - 1
@@ -401,7 +407,7 @@ class Simulation:
             # self.patient_status[self.patient_infection_source] = self.W + self.T - 1
             self.update_status("patient", self.patient_infection_source)
             self.hcw_infection_source = -1
-            self.infection_source_W = self.patient_W[self.patient_infection_source]
+            # self.infection_source_W = self.patient_W[self.patient_infection_source]
         # Infect one morning hcw in the first day
         elif self.morning_hcws.size > 0:
             # self.n_inf_rec[2,0,0] += 1
@@ -410,8 +416,9 @@ class Simulation:
             # self.hcw_status[self.hcw_infection_source] = self.W + self.T - 1
             self.update_status("hcw", self.hcw_infection_source)
             self.patient_infection_source = -1
-            self.infection_source_W = self.hcw_W[self.hcw_infection_source]
+            # self.infection_source_W = self.hcw_W[self.hcw_infection_source]
 
+        # Intervention: Patient isolation and early replacement 
         if self.intervention[0,3] and self.intervention[1,1]:
             self.flag_PI = True
 
@@ -458,7 +465,7 @@ class Simulation:
                             self.patient_isolation_hcw_early_replacement(d, p)
                             self.flag_PI = False
                             # at this point of time, all hcws in the unit are wearing surgical masks
-                            if self.intervention[2, 2]:
+                            if self.intervention[2, 2]: # Note: this intervention is only for Bppp.
                                 # start N95 counter, unmask HCWs and the N95s on the HCWs
                                 self.N95_days_count = 14
                                 self.unmask_hcws()
@@ -478,7 +485,6 @@ class Simulation:
                     self.transmission("hcw", h1, "hcw", h2, d)
                     # Disease flow: h2 -> h1
                     self.transmission("hcw", h2, "hcw", h1, d)
-
                             
                 # Any hcw-patient contacts?
                 hcw_patient_pairs = np.transpose(self.hcw_patient_contact[d,:,:,t].nonzero())
