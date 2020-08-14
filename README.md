@@ -42,27 +42,36 @@ cd dialysis
 ```
 
 - Compute alpha (scaling parameter for shedding models)
-The shedding models used in the paper are exp/exp (5%) and exp/exp (35%) that are D2 and D3 in the script.
+The shedding models used in the paper are exp/exp (20%) and exp/exp (60%), which correspond to D2 and D3 in the script.
 
 ```
 cd ..
 python compute_alpha_v2.py
 ```
 
-- Run COVID-19 simulation
-This takes roughly one day to run using Vinci server (used 60 cores).
+- Run baseline COVID-19 simulations (no interventions)
+
+You can run baseline simulations to check if everything set up correctly.
+The following script runs on 12 sets of simulations (2 scenarios, 2 shedding models, 3 target R0s), each setting with 500 replicates.
 Change the value of `cpu` to the number of CPU available in your device.
 For each intervention setting, disease model, R0, and infection source (patient or HCP), 
 we keep track of the following:
 (i) daily infection count, (ii) transmission routes, (iii) daily population (in case for addition HCP to unit), (iv) R0, and (v) the generation time.
-All of these are saved in `dialysis/results/day10/` directory with filenames of `final_scenario0.npz` (Scenario 1 in the paper) and `final_scenario1.npz` (Scenario 2 in the paper).
+Results are saved in `dialysis/results/day10/` directory with filenames of `baseline_scenario0.npz` (Scenario 1 in the paper) and `baseline_scenario1.npz` (Scenario 2 in the paper)
+```
+python COVID19_dialysis_baseline.py -cpu 60
+```
+
+- Run COVID-19 simulation (for all the interventions introduced in the paper)
+This takes roughly one day to run using Vinci server (used 60 cores).
+Results are saved in `dialysis/results/day10/` directory with filenames of `final_scenario0.npz` (Scenario 1 in the paper) and `final_scenario1.npz` (Scenario 2 in the paper).
 ```
 python COVID19_dialysis_final.py -cpu 60
 ```
 
 - Draw figures
-There are 4 shedding models embedded in the simulator, but for first two models are not used in simulation (D0 and D1).
-This generates warning when drawing figures at this stage. 
+Initially, we explored 4 shedding models (D0 - D3), but we only use two shedding models D2:exp/exp(20%) and D3:exp/exp(60%) in the simulation.
+This generates warning when drawing figures at this stage.
 Simply ignore the warnings and use results for D2 and D3.
 Figures are saved in `dialysis/tiff/plots/day10/`.
 Note that `-s 0` correspond to Scenario 1 and `-s 1` correspond to Scenario 2.
@@ -79,7 +88,7 @@ python -W ignore COVID19_dialysis_tables_final.py -s 0
 python -W ignore COVID19_dialysis_tables_final.py -s 1
 ```
 
-## Drawing the contact network and generating network statistics
+## Draw the contact network and generate network statistics
 
 - Generating network statistics
 Results are saved in `tables/statistics/`
