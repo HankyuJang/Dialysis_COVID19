@@ -78,7 +78,8 @@ if __name__ == "__main__":
 
     for i, e in enumerate(g.es):
         e1, e2 = e.tuple
-        g.es[i]["weight"] = 5 * (A[e1,e2] / Amax)
+        g.es[i]["weight"] = 2 * (A[e1,e2] / Amax)
+        # g.es[i]["weight"] = (A[e1,e2] / Amax)
 
     visual_style = {}
     visual_style["vertex_size"] = 22

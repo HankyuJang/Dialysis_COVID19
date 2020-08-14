@@ -1,7 +1,7 @@
 """
 Author: Hankyu Jang 
 Email: hankyu-jang@uiowa.edu
-Last Modified: May, 2020
+Last Modified: Aug, 2020
 
 Description: This script generates figures
 
@@ -9,9 +9,9 @@ Figures are saved in `dialysis/tiff/plots`
 """
 import argparse
 import numpy as np
+import pandas as pd
 import matplotlib as mpl
 mpl.use('Agg')
-import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
@@ -107,6 +107,15 @@ if __name__ == "__main__":
     Bppp_R0 = npzfile["Bppp_R0"]
     Bppp_generation_time = npzfile["Bppp_generation_time"]
     npzfile.close()
+
+    npzfile = np.load("dialysis/results/day{}/baseline_scenario{}.npz".format(day, s))
+    B_n_inf_rec = npzfile["B_n_inf_rec"]
+    B_transmission_route = npzfile["B_transmission_route"]
+    B_population = npzfile["B_population"]
+    B_R0 = npzfile["B_R0"]
+    B_generation_time = npzfile["B_generation_time"]
+    npzfile.close()
+
     ############################################################################################################3
     # Shape of arrays (B*)
     # dim0: n_repeat
@@ -142,8 +151,10 @@ if __name__ == "__main__":
     ############################################################################################################3
 
     xticklabels = ['M','T','W','Th','F','S','Su']*4+['M','T']
-    Dtype_list = ["uni/uni(5%)", "uni/uni(35%)", "exp/exp(5%)", "exp/exp(35%)"]
-    sus_array = np.load("dialysis/data/alpha_array.npy")
+    Dtype_list = ["uni/uni(5%)", "uni/uni(35%)", "exp/exp(20%)", "exp/exp(60%)"]
+    # alpha_array = np.load("dialysis/data/alpha_array.npy")
+    df_alpha = pd.read_csv("dialysis/data/df_alpha.csv", index_col=0)
+    alpha_array = df_alpha.values
     # QC_list0 = ["QC:0.5", "QC:0.7"]
     QC_list0 = [r'$r_{VI}=0.5$', r'$r_{VI}=0.7$']
     simulation_period = B_n_inf_rec.shape[-1]
@@ -238,7 +249,7 @@ if __name__ == "__main__":
     # for i, D in enumerate(Dtype_list):
         # if i in [0,1,3]:
             # continue
-        # for j, alpha in enumerate(sus_array[i]):
+        # for j, alpha in enumerate(alpha_array[i]):
             # B_T_max = B_T_infection.sum(axis=-1)[:,i,j].max()
             # N0_T_max = N0_T_infection.sum(axis=-1)[:,i,j].max()
             # N0_rr100_T_max = N0_rr100_T_infection.sum(axis=-1)[:,i,j].max()
@@ -283,7 +294,7 @@ if __name__ == "__main__":
     # for i, D in enumerate(Dtype_list):
         # if i in [0,1]:
             # continue
-        # for j, alpha in enumerate(sus_array[i]):
+        # for j, alpha in enumerate(alpha_array[i]):
             # B_T_max = B_T_infection.sum(axis=-1)[:,i,j].max()
             # B2p_T_max = B2p_T_infection.sum(axis=-1)[:,i,j].max()
             # B2pp_T_max = B2pp_T_infection.sum(axis=-1)[:,i,j].max()
@@ -341,7 +352,7 @@ if __name__ == "__main__":
     # for i, D in enumerate(Dtype_list):
         # if i in [0,1]:
             # continue
-        # for j, alpha in enumerate(sus_array[i]):
+        # for j, alpha in enumerate(alpha_array[i]):
             # B_T_max = B_T_infection.sum(axis=-1)[:,i,j].max()
             # Bp_T_max = Bp_T_infection.sum(axis=-1)[:,i,j].max()
             # # early HCP replacement. k=1
@@ -396,7 +407,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             B_ar = B_T_cum_attack_rate[:,i,j,-1]
             Bp_ar = Bp_T_cum_attack_rate[:,i,j,-1]
             Bpp_ar = Bpp_T_cum_attack_rate[:,i,j,0,-1]
@@ -416,7 +427,7 @@ if __name__ == "__main__":
             plt.xlabel("Attack rate")
             plt.ylabel("Simulation count")
             plt.ylim(0, 500)
-            plt.legend(loc="best")
+            plt.legend(loc="upper left")
             plt.grid(which='major', axis='both',linestyle=':')
             # plt.grid(which='minor', axis='x',linestyle=':')
             # plt.set_yticks(range(n_bins)/n_bins, minor=True)
@@ -434,7 +445,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Patient Infection
             p1,=plt.plot(np.arange(1, simulation_period+1), np.mean(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(N0_T_cum_attack_rate, axis=0)[i,j,0], label=r'$r_{SD}=0.25$', color="C1", zorder=5)
@@ -460,7 +471,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Patient Infection
             p1,=plt.plot(np.arange(1, simulation_period+1), np.mean(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(N1_T_cum_attack_rate, axis=0)[i,j,0], label=r'$r_{PS}=0.25$', color="C1", zorder=5)
@@ -486,7 +497,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Patient Infection
             p1,=plt.plot(np.arange(1, simulation_period+1), np.mean(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(H0_T_cum_attack_rate, axis=0)[i,j,0], label="VI {} (HCP:+{:.1f})".format(QC_list0[0], H0_replaced_HCPs[i,j,0]), color="C1", zorder=5)
@@ -499,7 +510,7 @@ if __name__ == "__main__":
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
-            plt.legend(handles=[p1,p2,p3,p4], loc='best')
+            plt.legend(handles=[p1,p2,p3,p4], loc='lower right')
             plt.xticks(range(1, 31), xticklabels)
             plt.grid(zorder=0)
             plt.savefig("dialysis/tiff/plots/day{}/B_H0_H1_D{}_R0{}_scenario{}.tif".format(day, i, R0, s), dpi=300)
@@ -508,7 +519,7 @@ if __name__ == "__main__":
     # for i, D in enumerate(Dtype_list):
         # if i in [0,1]:
             # continue
-        # for j, alpha in enumerate(sus_array[i]):
+        # for j, alpha in enumerate(alpha_array[i]):
             # # Cum Patient Infection
             # p1,=plt.plot(np.arange(1, simulation_period+1), np.median(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             # p2,=plt.plot(np.arange(1, simulation_period+1), np.median(H0_T_cum_attack_rate, axis=0)[i,j,0], label="VI {} (HCP:+{:.1f})".format(QC_list0[0], H0_replaced_HCPs[i,j,0]), color="C1", zorder=5)
@@ -521,7 +532,7 @@ if __name__ == "__main__":
             # plt.xlabel("Time (in days)")
             # plt.ylabel("Attack rate")
             # plt.ylim(0,1)
-            # plt.legend(handles=[p1,p2,p3,p4], loc='best')
+            # plt.legend(handles=[p1,p2,p3,p4], loc='lower right')
             # plt.xticks(range(1, 31), xticklabels)
             # plt.grid(zorder=0)
             # plt.savefig("dialysis/tiff/plots/day{}/median_B_H0_H1_D{}_R0{}_scenario{}.tif".format(day, i, R0, s))
@@ -533,7 +544,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Patient Infection
             p1,=plt.plot(np.arange(1, simulation_period+1), np.mean(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(P2_T_cum_attack_rate, axis=0)[i,j], label="Patient:surgical, HCP:x", color="C1", zorder=5)
@@ -546,7 +557,7 @@ if __name__ == "__main__":
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
-            plt.legend(handles=[p1,p2,p3,p4], loc='best')
+            plt.legend(handles=[p1,p2,p3,p4], loc='upper left')
             plt.xticks(range(1, 31), xticklabels)
             plt.grid(zorder=0)
             plt.savefig("dialysis/tiff/plots/day{}/B_P2_H2P2_D{}_R0{}_scenario{}.tif".format(day,i, R0, s), dpi=300)
@@ -555,7 +566,7 @@ if __name__ == "__main__":
     # for i, D in enumerate(Dtype_list):
         # if i in [0,1]:
             # continue
-        # for j, alpha in enumerate(sus_array[i]):
+        # for j, alpha in enumerate(alpha_array[i]):
             # # Cum Patient Infection
             # p1,=plt.plot(np.arange(1, simulation_period+1), np.median(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             # p2,=plt.plot(np.arange(1, simulation_period+1), np.median(P2_T_cum_attack_rate, axis=0)[i,j], label="M P:surgical, H:x", color="C1", zorder=5)
@@ -568,7 +579,7 @@ if __name__ == "__main__":
             # plt.xlabel("Time (in days)")
             # plt.ylabel("Attack rate")
             # plt.ylim(0,1)
-            # plt.legend(handles=[p1,p2,p3,p4], loc='best')
+            # plt.legend(handles=[p1,p2,p3,p4], loc='lower right')
             # plt.xticks(range(1, 31), xticklabels)
             # plt.grid(zorder=0)
             # plt.savefig("dialysis/tiff/plots/day{}/median_B_P2_H2P2_D{}_R0{}_scenario{}.tif".format(day,i, R0, s))
@@ -580,14 +591,14 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Patient Infection
             p1,=plt.plot(np.arange(1, simulation_period+1), np.mean(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(H3P1_T_cum_attack_rate, axis=0)[i,j,0], label="k=1 (HCP:+{:.1f})".format(H3P1_replaced_HCPs[i,j,0]), color="C1", zorder=5)
             p3,=plt.plot(np.arange(1, simulation_period+1), np.mean(H3P1_T_cum_attack_rate, axis=0)[i,j,1], label="k=2 (HCP:+{:.1f})".format(H3P1_replaced_HCPs[i,j,1]), color="C2", zorder=6)
             p4,=plt.plot(np.arange(1, simulation_period+1), np.mean(H3P1_T_cum_attack_rate, axis=0)[i,j,2], label="k=3 (HCP:+{:.1f})".format(H3P1_replaced_HCPs[i,j,2]), color="C3", zorder=7)
             p5,=plt.plot(np.arange(1, simulation_period+1), np.mean(H3P1_T_cum_attack_rate, axis=0)[i,j,3], label="k=4 (HCP:+{:.1f})".format(H3P1_replaced_HCPs[i,j,3]), color="C4", zorder=8)
-            p6,=plt.plot(np.arange(1, simulation_period+1), np.mean(H3P1_T_cum_attack_rate, axis=0)[i,j,4], label="k=5 (HCP:+{:.1f})".format(H3P1_replaced_HCPs[i,j,4]), color="C5", zorder=9)
+            p6,=plt.plot(np.arange(1, simulation_period+1), np.mean(H3P1_T_cum_attack_rate, axis=0)[i,j,4], label="k=5 (HCP:+{:.1f})".format(H3P1_replaced_HCPs[i,j,4]), color="black", zorder=9)
 
             # R0 = np.mean(B_R0, axis=0)[i,j]
             R0 = target_R0[j]
@@ -595,7 +606,7 @@ if __name__ == "__main__":
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
-            plt.legend(handles=[p1,p2,p3,p4,p5,p6], loc='best')
+            plt.legend(handles=[p1,p2,p3,p4,p5,p6], loc='lower right')
             plt.xticks(range(1, 31), xticklabels)
             plt.grid(zorder=0)
             plt.savefig("dialysis/tiff/plots/day{}/B_H3P1_D{}_R0{}_scenario{}.tif".format(day,i, R0, s), dpi=300)
@@ -607,7 +618,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Patient Infection
             p1,=plt.plot(np.arange(1, simulation_period+1), np.mean(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(Bp_T_cum_attack_rate, axis=0)[i,j], label="Baseline+", color="C1", zorder=5)
@@ -625,8 +636,9 @@ if __name__ == "__main__":
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
-            plt.legend(handles=[p1,p2,p3,p4], loc='best')
-            # plt.legend(handles=[p1,p2,p3,p4,p5,p6,p7], loc='best')
+            l = plt.legend(handles=[p1,p2,p3,p4], loc='lower right')
+            l.set_zorder(100)
+            # plt.legend(handles=[p1,p2,p3,p4,p5,p6,p7], loc='lower right')
             plt.xticks(range(1, 31), xticklabels)
             plt.grid(zorder=0)
             plt.savefig("dialysis/tiff/plots/day{}/B_Bp_Bpp_Bppp_D{}_R0{}_scenario{}.tif".format(day,i, R0, s), dpi=300)
@@ -638,7 +650,7 @@ if __name__ == "__main__":
     # for i, D in enumerate(Dtype_list):
         # if i in [0,1]:
             # continue
-        # for j, alpha in enumerate(sus_array[i]):
+        # for j, alpha in enumerate(alpha_array[i]):
             # # Cum Patient Infection
             # p1,=plt.plot(np.arange(1, simulation_period+1), np.median(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             # p2,=plt.plot(np.arange(1, simulation_period+1), np.median(Bp_T_cum_attack_rate, axis=0)[i,j], label="Baseline+", color="C1", zorder=5)
@@ -656,8 +668,8 @@ if __name__ == "__main__":
             # plt.xlabel("Time (in days)")
             # plt.ylabel("Attack rate")
             # plt.ylim(0,1)
-            # plt.legend(handles=[p1,p2,p3,p4], loc='best')
-            # # plt.legend(handles=[p1,p2,p3,p4,p5,p6,p7], loc='best')
+            # plt.legend(handles=[p1,p2,p3,p4], loc='lower right')
+            # # plt.legend(handles=[p1,p2,p3,p4,p5,p6,p7], loc='lower right')
             # plt.xticks(range(1, 31), xticklabels)
             # plt.grid(zorder=0)
             # plt.savefig("dialysis/tiff/plots/day{}/median_B_Bp_Bpp_Bppp_D{}_R0{}_scenario{}.tif".format(day,i, R0, s))
@@ -669,7 +681,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Transmission route
             p1,=plt.plot(np.arange(1, simulation_period+1), np.cumsum(np.mean(B_transmission_route[:,:,:,0,:], axis=0)[i,j,:]), label="HCP->Patient", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.cumsum(np.mean(B_transmission_route[:,:,:,1,:], axis=0)[i,j,:]), label="Patient->HCP", color="C1", zorder=5)
@@ -682,7 +694,7 @@ if __name__ == "__main__":
             plt.xlabel("Time (in days)")
             plt.ylabel("Infection count")
             plt.ylim(0, 30)
-            plt.legend(handles=[p1,p4,p3,p2], loc='best')
+            plt.legend(handles=[p1,p4,p3,p2], loc='upper left')
             plt.xticks(range(1, 31), xticklabels)
             plt.grid(zorder=0)
             plt.savefig("dialysis/tiff/plots/day{}/transmission_route_D{}_R0{}_scenario{}.tif".format(day, i, R0, s), dpi=300)

@@ -1,7 +1,7 @@
 """
 Author: Hankyu Jang 
 Email: hankyu-jang@uiowa.edu
-Last Modified: July, 2020
+Last Modified: Aug, 2020
 
 Description: This script generates figures on other long days
 
@@ -9,9 +9,9 @@ Figures are saved in `dialysis/tiff/plots/day{}`
 """
 import argparse
 import numpy as np
+import pandas as pd
 import matplotlib as mpl
 mpl.use('Agg')
-import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
@@ -110,8 +110,10 @@ if __name__ == "__main__":
     ############################################################################################################3
 
     xticklabels = ['M','T','W','Th','F','S','Su']*4+['M','T']
-    Dtype_list = ["uni/uni(5%)", "uni/uni(35%)", "exp/exp(5%)", "exp/exp(35%)"]
-    sus_array = np.load("dialysis/data/alpha_array.npy")
+    Dtype_list = ["uni/uni(20%)", "uni/uni(60%)", "exp/exp(20%)", "exp/exp(60%)"]
+    # alpha_array = np.load("dialysis/data/alpha_array.npy")
+    df_alpha = pd.read_csv("dialysis/data/df_alpha.csv", index_col=0)
+    alpha_array = df_alpha.values
     # QC_list0 = ["QC:0.5", "QC:0.7"]
     QC_list0 = [r'$r_{VI}=0.5$', r'$r_{VI}=0.7$']
     simulation_period = B_n_inf_rec.shape[-1]
@@ -154,7 +156,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             B_ar = B_T_cum_attack_rate[:,i,j,-1]
             Bp_ar = Bp_T_cum_attack_rate[:,i,j,-1]
             Bpp_ar = Bpp_T_cum_attack_rate[:,i,j,0,-1]
@@ -174,7 +176,7 @@ if __name__ == "__main__":
             plt.xlabel("Attack rate")
             plt.ylabel("Simulation count")
             plt.ylim(0, 500)
-            plt.legend(loc="best")
+            plt.legend(loc="upper left")
             plt.grid(which='major', axis='both',linestyle=':')
             # plt.grid(which='minor', axis='x',linestyle=':')
             # plt.set_yticks(range(n_bins)/n_bins, minor=True)
@@ -190,7 +192,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Patient Infection
             p1,=plt.plot(np.arange(1, simulation_period+1), np.mean(B_T_cum_attack_rate, axis=0)[i,j], label="Baseline", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.mean(Bp_T_cum_attack_rate, axis=0)[i,j], label="Baseline+", color="C1", zorder=5)
@@ -208,7 +210,8 @@ if __name__ == "__main__":
             plt.xlabel("Time (in days)")
             plt.ylabel("Attack rate")
             plt.ylim(0,1)
-            plt.legend(handles=[p1,p2,p3,p4], loc='best')
+            l = plt.legend(handles=[p1,p2,p3,p4], loc='lower right')
+            l.set_zorder(100)
             # plt.legend(handles=[p1,p2,p3,p4,p5,p6,p7], loc='best')
             plt.xticks(range(1, 31), xticklabels)
             plt.grid(zorder=0)
@@ -221,7 +224,7 @@ if __name__ == "__main__":
     for i, D in enumerate(Dtype_list):
         if i in [0,1]:
             continue
-        for j, alpha in enumerate(sus_array[i]):
+        for j, alpha in enumerate(alpha_array[i]):
             # Cum Transmission route
             p1,=plt.plot(np.arange(1, simulation_period+1), np.cumsum(np.mean(B_transmission_route[:,:,:,0,:], axis=0)[i,j,:]), label="HCP->Patient", color="C0", zorder=4)
             p2,=plt.plot(np.arange(1, simulation_period+1), np.cumsum(np.mean(B_transmission_route[:,:,:,1,:], axis=0)[i,j,:]), label="Patient->HCP", color="C1", zorder=5)
@@ -234,7 +237,7 @@ if __name__ == "__main__":
             plt.xlabel("Time (in days)")
             plt.ylabel("Infection count")
             plt.ylim(0, 30)
-            plt.legend(handles=[p1,p4,p3,p2], loc='best')
+            plt.legend(handles=[p1,p4,p3,p2], loc='upper left')
             plt.xticks(range(1, 31), xticklabels)
             plt.grid(zorder=0)
             plt.savefig("dialysis/tiff/plots/day{}/transmission_route_D{}_R0{}_scenario{}.tif".format(day, i, R0, s), dpi=300)

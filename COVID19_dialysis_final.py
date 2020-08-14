@@ -23,9 +23,9 @@ from COVID19_simulator_v5 import *
 import multiprocessing
 from functools import partial
 
-def simulate(W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hcw_hcw_contact, hcw_patient_contact, patient_patient_contact, morning_patients, morning_hcws, rep):
+def simulate(W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hcw_hcw_contact, hcw_patient_contact, patient_patient_contact, morning_patients, morning_hcws, rep):
     np.random.seed(rd.randint(0, 10000000))
-    simul = Simulation(W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hcw_hcw_contact, hcw_patient_contact, patient_patient_contact, morning_patients, morning_hcws)
+    simul = Simulation(W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hcw_hcw_contact, hcw_patient_contact, patient_patient_contact, morning_patients, morning_hcws)
     simul.simulate()
     return simul.n_inf_rec, simul.transmission_route, simul.population, simul.R0, simul.generation_time
 
@@ -53,14 +53,14 @@ def get_morning_patients(hpc_original, timestep_at_nine):
 
 def print_results(R0, n_inf_rec, repetition, Dtype, alpha_idx):
     R0_dict = {0:"2.0", 1:"2.5", 2:"3.0"}
-    shedding_dict = {2:"exp/exp(5%)", 3:"exp/exp(35%)"}
+    shedding_dict = {2:"exp/exp(20%)", 3:"exp/exp(60%)"}
     print("Shedding model: {}, Target R0: {}".format(shedding_dict[Dtype], R0_dict[alpha_idx]))
     print("Oberved R0: {:.2f}".format(R0.mean()))
     transmission_source_in_P = (n_inf_rec[:,0,0,:] + n_inf_rec[:,0,1,:]).sum()
     transmission_source_in_S = (n_inf_rec[:,1,0,:] + n_inf_rec[:,1,1,:]).sum()
     transmission_total = transmission_source_in_P + transmission_source_in_S
-    print("Infections, when source in P: {:.2f}".format(transmission_source_in_P / repetition))
-    print("Infections, when source in S: {:.2f}".format(transmission_source_in_S / repetition))
+    print("Infections, when source in P (presymptomatic): {:.2f}".format(transmission_source_in_P / repetition))
+    print("Infections, when source in S (symptomatic): {:.2f}".format(transmission_source_in_S / repetition))
     print("Percentage of transmission occurring prior to symptom onset: {:.2f}%".format(100 * transmission_source_in_P / transmission_total))
 
 if __name__ == "__main__":
@@ -165,7 +165,15 @@ if __name__ == "__main__":
     intervention = np.zeros((3, 5)).astype(bool)
 
     Dtype_list = [0, 1, 2, 3] # 0 and 1 are not used in this project.
-    alpha_array = np.load("dialysis/data/alpha_array.npy") # This is the alpha (scaling down parameters). naming is bad for this, since I simply plugged into the parater that was not used in the simulator.
+    # This is the alpha (scaling down parameters). naming is bad for this, since I simply plugged into the parater that was not used in the simulator.
+    df_alpha = pd.read_csv("dialysis/data/df_alpha.csv", index_col=0)
+    alpha_array = df_alpha.values
+    # Beta and gamma are ramp-up and ramp-down factors.
+    df_beta = pd.read_csv("dialysis/data/df_beta.csv", index_col=0)
+    beta_array = df_beta.values
+    df_gamma = pd.read_csv("dialysis/data/df_gamma.csv", index_col=0)
+    gamma_array = df_gamma.values
+
     QC_list0 = [0.5, 0.7] # HCW quarantine compliance rates for (self-quaranine)
     QC_list1 = [1] # compliance rate for active surveillance
     rr_list = [0.25, 0.5, 0.75, 1.00] # contact removal rats
@@ -315,9 +323,13 @@ if __name__ == "__main__":
             print(morning_hcws)
 
         for Dtype_idx, Dtype in enumerate(Dtype_list):
+            # We use two shedding models that are exp/exp(20%) and exp/exp(60%) that are Dtype 2 and 3, respectively.
             if Dtype_idx in [0, 1]:
                 continue
             for alpha_idx, alpha in enumerate(alpha_array[Dtype_idx]):
+                beta = beta_array[Dtype_idx, alpha_idx]
+                gamma = gamma_array[Dtype_idx, alpha_idx]
+                # We run total set of simulations when target R0=3
                 # if alpha_idx in [0, 1]:
                     # continue
 
@@ -333,7 +345,7 @@ if __name__ == "__main__":
                 counter_seed += 1
 
                 pool = multiprocessing.Pool(processes=n_cpu)
-                func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                 r = pool.map(func, rep)
                 pool.close()
 
@@ -365,7 +377,7 @@ if __name__ == "__main__":
                     counter_seed += 1
 
                     pool = multiprocessing.Pool(processes=n_cpu)
-                    func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                    func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                     r = pool.map(func, rep)
                     pool.close()
 
@@ -397,7 +409,7 @@ if __name__ == "__main__":
                 counter_seed += 1
 
                 pool = multiprocessing.Pool(processes=n_cpu)
-                func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                 r = pool.map(func, rep)
                 pool.close()
 
@@ -428,7 +440,7 @@ if __name__ == "__main__":
                 counter_seed += 1
 
                 pool = multiprocessing.Pool(processes=n_cpu)
-                func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                 r = pool.map(func, rep)
                 pool.close()
 
@@ -461,7 +473,7 @@ if __name__ == "__main__":
                 counter_seed += 1
 
                 pool = multiprocessing.Pool(processes=n_cpu)
-                func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                 r = pool.map(func, rep)
                 pool.close()
 
@@ -493,7 +505,7 @@ if __name__ == "__main__":
                 counter_seed += 1
 
                 pool = multiprocessing.Pool(processes=n_cpu)
-                func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                 r = pool.map(func, rep)
                 pool.close()
 
@@ -536,7 +548,7 @@ if __name__ == "__main__":
                     counter_seed += 1
 
                     pool = multiprocessing.Pool(processes=n_cpu)
-                    func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                    func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                     r = pool.map(func, rep)
                     pool.close()
 
@@ -581,7 +593,7 @@ if __name__ == "__main__":
                     counter_seed += 1
 
                     pool = multiprocessing.Pool(processes=n_cpu)
-                    func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                    func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                     r = pool.map(func, rep)
                     pool.close()
 
@@ -613,7 +625,7 @@ if __name__ == "__main__":
                     counter_seed += 1
 
                     pool = multiprocessing.Pool(processes=n_cpu)
-                    func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                    func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                     r = pool.map(func, rep)
                     pool.close()
 
@@ -646,7 +658,7 @@ if __name__ == "__main__":
                 counter_seed += 1
 
                 pool = multiprocessing.Pool(processes=n_cpu)
-                func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                 r = pool.map(func, rep)
                 pool.close()
 
@@ -681,7 +693,7 @@ if __name__ == "__main__":
                     counter_seed += 1
 
                     pool = multiprocessing.Pool(processes=n_cpu)
-                    func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                    func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                     r = pool.map(func, rep)
                     pool.close()
 
@@ -717,7 +729,7 @@ if __name__ == "__main__":
                     counter_seed += 1
 
                     pool = multiprocessing.Pool(processes=n_cpu)
-                    func = partial(simulate, W, T, inf, alpha, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
+                    func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
                     r = pool.map(func, rep)
                     pool.close()
 

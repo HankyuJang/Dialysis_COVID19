@@ -7,11 +7,6 @@ Description: This script precomputes contact in dialysis unit
 
 Contact if two individuals (HCWs and Patients) are within 6 ft distances with each other.
 
-# 1. HCW arrays
-The script computes following numpy arrays that are used in the simulation for specified day and distance.
-- day: day of the collected data (1 - 10)
-- dist: distance that is used to define a contact (contact if distance btw entities < dist)
-
 1. hcw_hcw_contact
 2. hcw_hcw_contact_both_center
 3. hcw_handwash_prox
@@ -52,7 +47,7 @@ def preprocess_st(df_st):
 
     return station_x, station_y
 
-def get_hcw_hcw_contact(time):
+def get_hcw_hcw_contact(time, distance_threshold, station_x, station_y):
     hcw_hcw_pairs = []
     hcw_hcw_pairs_both_center = []
 
@@ -61,8 +56,8 @@ def get_hcw_hcw_contact(time):
 
     for i in range(n):
         for j in range(i+1, n):
-            dist = get_distance(df_temp.loc[i, ['x', 'y']], df_temp.loc[j, ['x', 'y']])
-            if dist <= dist:
+            distance_btw_hcws = get_distance(df_temp.loc[i, ['x', 'y']], df_temp.loc[j, ['x', 'y']])
+            if distance_btw_hcws <= distance_threshold:
                 i_id = df_temp.loc[i, 'ID']
                 i_x = df_temp.loc[i, 'x']
                 i_y = df_temp.loc[i, 'y']
@@ -71,7 +66,7 @@ def get_hcw_hcw_contact(time):
                 j_x = df_temp.loc[j, 'x']
                 j_y = df_temp.loc[j, 'y']
                 # Check if both hcws are in the nurses station
-                if isin_station(11, i_x, i_y) and isin_station(11, j_x, j_y):
+                if isin_station(11, i_x, i_y, station_x, station_y) and isin_station(11, j_x, j_y, station_x, station_y):
                     hcw_hcw_pairs_both_center.append((i_id, j_id))
                 else:
                     hcw_hcw_pairs.append((i_id, j_id))
@@ -79,7 +74,7 @@ def get_hcw_hcw_contact(time):
     return hcw_hcw_pairs, hcw_hcw_pairs_both_center#, hcw_hcw_pairs_center
 
 # hcws who are at the hand-wahing station
-def hcw_st(time):
+def hcw_st(time, df_hcw, n_chair, station_x, station_y):
     df_temp = df_hcw[df_hcw.time==time].reset_index(drop=True)
     hcw_hand_washing = []
     hcw_center = []
@@ -87,21 +82,21 @@ def hcw_st(time):
     for index, row in df_temp.iterrows(): # For each hcw
         # hcw-handwashing
         for i in range(n_chair, n_chair+2):
-            if isin_station(i, row['x'], row['y']):
+            if isin_station(i, row['x'], row['y'], station_x, station_y):
                 hcw_hand_washing.append(int(row['ID']))
                 # count += 1
         # hcw-nurses station
         for i in range(n_chair+2, n_chair+3):
-            if isin_station(i, row['x'], row['y']):
+            if isin_station(i, row['x'], row['y'], station_x, station_y):
                 hcw_center.append(int(row['ID']))
 
     return hcw_hand_washing, hcw_center
 
 # Return True if the HCW is in the station 
-def isin_station(idx, pos_x, pos_y):
+def isin_station(idx, pos_x, pos_y, station_x, station_y):
     return station_x[idx][0] < pos_x < station_x[idx][1] and station_y[idx][0] < pos_y < station_y[idx][1]
 
-def get_hcw_arrays(n_hcw, max_time):
+def get_hcw_arrays(n_hcw, max_time, distance_threshold, station_x, station_y):
     temp_hcw_hand_washing = []
     temp_hcw_center = []
     temp_hcw_hcw_pairs = []
@@ -110,7 +105,7 @@ def get_hcw_arrays(n_hcw, max_time):
 
     for t in range(1, max_time+1):
         # Is there hcw-patient contact? hcw hand washing event?
-        hcw_hand_washing, hcw_center = hcw_st(t)
+        hcw_hand_washing, hcw_center = hcw_st(t, df_hcw, n_chair, station_x, station_y)
         temp_hcw_hand_washing.append(hcw_hand_washing)
         temp_hcw_center.append(hcw_center)
 
@@ -118,7 +113,7 @@ def get_hcw_arrays(n_hcw, max_time):
             hcw_at_center[hcw-1, t-1] = True
 
         # Is there hcw-hcw contact?
-        hcw_hcw_pairs, hcw_hcw_pairs_both_center = get_hcw_hcw_contact(t)
+        hcw_hcw_pairs, hcw_hcw_pairs_both_center = get_hcw_hcw_contact(t, distance_threshold, station_x, station_y)
 
         temp_hcw_hcw_pairs.append(hcw_hcw_pairs)
         # temp_hcw_hcw_pairs_center.append(hcw_hcw_pairs_center)
@@ -194,10 +189,10 @@ def get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, n_chair, max_time
     ###################################################################
     return patient_in_chair, np.array(t_in), np.array(t_out)
 
-def patient_scheduling(session, morning, afternoon, n_patients, t_in, c_in):
+def patient_scheduling(session, timestep_at_9am, timestep_at_2pm, n_patients, t_in, c_in):
     patients = np.arange(n_patients//2)
-    morning_patients = (t_in <= morning).nonzero()[0]
-    evening_patients = (t_in > afternoon).nonzero()[0]
+    morning_patients = (t_in <= timestep_at_9am).nonzero()[0]
+    evening_patients = (t_in > timestep_at_2pm).nonzero()[0]
     afternoon_patients = np.array(list(set(patients) - set(morning_patients) - set(evening_patients)))
     # print(morning_patients)
     # print(afternoon_patients)
@@ -234,7 +229,7 @@ def patient_scheduling(session, morning, afternoon, n_patients, t_in, c_in):
 
     return patient_placement
 
-def get_patient_arrays(simulation_length, n_hcw, max_time, morning, afternoon, n_chair, day, contact_distance):
+def get_patient_arrays(simulation_length, n_hcw, max_time, timestep_at_9am, timestep_at_2pm, n_chair, day, contact_distance):
     # hcw_chair_dist = np.load("data/hcw_chair_distance_day{}.npy".format(day))
 
     hcw_chair_dist = np.zeros((n_hcw, n_chair, max_time))
@@ -265,60 +260,104 @@ def get_patient_arrays(simulation_length, n_hcw, max_time, morning, afternoon, n
         # M,W,F
         if d % 7 in {0, 2, 4}:
             patient_in_chair, t_in, t_out = get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, n_chair, max_time)
-            patient_placement = patient_scheduling("MWF", morning, afternoon, n_patient, t_in, chairs)
+            patient_placement = patient_scheduling("MWF", timestep_at_9am, timestep_at_2pm, n_patient, t_in, chairs)
+            if d==0:
+                print("Patient scheduling on the first day in {session:{chair:patient}}")
+                print(patient_placement)
 
         ###################################################################
         # T,Th,S
         elif d % 7 in {1, 3, 5}:
             patient_in_chair, t_in, t_out = get_patient_info(t_in_s, t_in_e, t_out_s, t_out_e, chairs, n_chair, max_time)
-            patient_placement = patient_scheduling("TThS", morning, afternoon, n_patient, t_in, chairs)
+            patient_placement = patient_scheduling("TThS", timestep_at_9am, timestep_at_2pm, n_patient, t_in, chairs)
 
         ###################################################################
         # Sunday
         elif d % 7 == 6:
             continue 
 
+        ###################################################################
         # HCW-Patient contact
+        ###################################################################
         for p_idx, c in enumerate(chairs):
             contact = hcw_chair_prox[:, c, t_in[p_idx]:t_out[p_idx]]
-            if t_in[p_idx] <= morning:
+            if t_in[p_idx] <= timestep_at_9am:
                 hcw_patient_contact[:, patient_placement["morning"][c], t_in[p_idx]:t_out[p_idx]] = contact
-            elif t_in[p_idx] > afternoon:
+            elif t_in[p_idx] > timestep_at_2pm:
                 hcw_patient_contact[:, patient_placement["evening"][c], t_in[p_idx]:t_out[p_idx]] = contact
             else:
                 hcw_patient_contact[:, patient_placement["afternoon"][c], t_in[p_idx]:t_out[p_idx]] = contact
         # print(hcw_patient_contact.sum(axis=2).T)
         hcw_patient_contact_arrays[d] = hcw_patient_contact 
 
+        
         # Patient-Patient contact
-        for c in range(0,8):
-            if c==5:
-                continue
-            # print(c)
-            contact = patient_in_chair[c] & patient_in_chair[c+1]
+        session_list = []
+        for t in t_in:
+            if t <= timestep_at_9am:
+                session_list.append("morning")
+            elif t > timestep_at_2pm:
+                session_list.append("evening")
+            else:
+                session_list.append("afternoon")
+        
+        df_daily_dialysis_session = pd.DataFrame({"chairs":chairs, "t_in":t_in, "t_out":t_out, "session":session_list})
 
-            try:
-                p1, p2 = patient_placement["morning"][c], patient_placement["morning"][c+1]
-                patient_patient_contact[p1,p2,:morning] = contact[:morning]
-                patient_patient_contact[p2,p1,:morning] = contact[:morning]
-            except:
-                pass
-                # print("morning: chair is empty")
+        patient_placement_list = []
+        for i, row in df_daily_dialysis_session.iterrows():
+            patient_placement_list.append(patient_placement[row.session][row.chairs])
+        df_daily_dialysis_session.insert(loc=0, column="patient", value=patient_placement_list)
+        df_daily_dialysis_session.to_csv("data/dialysis_sessions/day{}/daily_sessions_simul_day{}.csv".format(day, d), index=False)
 
-            try:
-                p1, p2 = patient_placement["afternoon"][c], patient_placement["afternoon"][c+1]
-                patient_patient_contact[p1,p2,morning:afternoon] = contact[morning:afternoon]
-                patient_patient_contact[p2,p1,morning:afternoon] = contact[morning:afternoon]
-            except:
-                pass
-                # print("afternoon: chair is empty")
+        # Chair2 - Chair3 (c=1 and c=2)
+        # Chair3 - Chair4 (c=2 and c=3)
+        # Chair4 - Chair5 (c=3 and c=4)
+        # Chair5 - Chair6 (c=4 and c=5)
+        for c in range(1, 5):
+            df_dialysis_chair_i = df_daily_dialysis_session[chairs==c]
+            df_dialysis_chair_j = df_daily_dialysis_session[chairs==c+1]
+            
+            for i, row_i in df_dialysis_chair_i.iterrows():
+                in_chair_i = np.zeros((max_time)).astype(bool)
+                in_chair_i[row_i.t_in: row_i.t_out] = True
+                for j, row_j in df_dialysis_chair_j.iterrows():
+                    in_chair_j = np.zeros((max_time)).astype(bool)
+                    in_chair_j[row_j.t_in: row_j.t_out] = True
 
-            try:
-                p1, p2 = patient_placement["evening"][c], patient_placement["evening"][c+1]
-                patient_patient_contact[p1,p2,afternoon:] = contact[afternoon:]
-                patient_patient_contact[p2,p1,afternoon:] = contact[afternoon:]
-            except:
-                pass
+                    # look for overlap in time
+                    contact = in_chair_i & in_chair_j
+                    patient_patient_contact[row_i.patient, row_j.patient,:] = contact
+                    patient_patient_contact[row_j.patient, row_i.patient,:] = contact
+
+        # Patient-Patient contact
+        # for c in range(0,8):
+            # if c==5:
+                # continue
+            # # print(c)
+            # contact = patient_in_chair[c] & patient_in_chair[c+1]
+
+            # try:
+                # p1, p2 = patient_placement["morning"][c], patient_placement["morning"][c+1]
+                # patient_patient_contact[p1,p2,:timestep_at_9am] = contact[:timestep_at_9am]
+                # patient_patient_contact[p2,p1,:timestep_at_9am] = contact[:timestep_at_9am]
+            # except:
+                # pass
+                # # print("morning: chair is empty")
+
+            # try:
+                # p1, p2 = patient_placement["afternoon"][c], patient_placement["afternoon"][c+1]
+                # patient_patient_contact[p1,p2,timestep_at_9am:timestep_at_2pm] = contact[timestep_at_9am:timestep_at_2pm]
+                # patient_patient_contact[p2,p1,timestep_at_9am:timestep_at_2pm] = contact[timestep_at_9am:timestep_at_2pm]
+            # except:
+                # pass
+                # # print("afternoon: chair is empty")
+
+            # try:
+                # p1, p2 = patient_placement["evening"][c], patient_placement["evening"][c+1]
+                # patient_patient_contact[p1,p2,timestep_at_2pm:] = contact[timestep_at_2pm:]
+                # patient_patient_contact[p2,p1,timestep_at_2pm:] = contact[timestep_at_2pm:]
+            # except:
+                # pass
                 # print("evening: chair is empty")
 
         patient_patient_contact_arrays[d] = patient_patient_contact 
@@ -344,10 +383,10 @@ if __name__ == "__main__":
     # df starts from 0. Day1 = 0th row. Day10 = 9th row
     df = pd.read_table("data/date_time.txt", sep='.', header=None, names = ['year','month','day','hour','minute','second'])
     row = df.iloc[day-1]
-    session_start = datetime.datetime(row.year, row.month, row.day, row.hour, row.minute, row.second)
-    morning_start = datetime.datetime(row.year, row.month, row.day, 9, 0, 0)
-    morning = (morning_start - session_start).seconds // 8
-    afternoon = morning + 5 * 60 * 60 // 8
+    start_time_of_day = datetime.datetime(row.year, row.month, row.day, row.hour, row.minute, row.second)
+    nine = datetime.datetime(row.year, row.month, row.day, 9, 0, 0)
+    timestep_at_9am = (nine - start_time_of_day).seconds // 8
+    timestep_at_2pm = timestep_at_9am + 5 * 60 * 60 // 8
 
     # number of chairs in the dialysis unit
     n_chair = 9
@@ -370,8 +409,8 @@ if __name__ == "__main__":
 
     # HCW-HCW contact
     print("Computing HCW arrays: hcw_hcw_contact, hcw_hcw_contact_both_center, hcw_handwash_prox, hcw_center_prox, hcw_at_center...")
-    hcw_hcw_contact, hcw_hcw_contact_both_center, hcw_handwash_prox, hcw_center_prox, hcw_at_center = get_hcw_arrays(n_hcw, max_time)
 
+    hcw_hcw_contact, hcw_hcw_contact_both_center, hcw_handwash_prox, hcw_center_prox, hcw_at_center = get_hcw_arrays(n_hcw, max_time, contact_distance, station_x, station_y)
     outfile = "contact_data/hcw_arrays_day{}_{}ft".format(day, contact_distance)
     np.savez(outfile, hcw_hcw_contact=hcw_hcw_contact, hcw_hcw_contact_both_center=hcw_hcw_contact_both_center, hcw_handwash_prox=hcw_handwash_prox, hcw_center_prox=hcw_center_prox, hcw_at_center=hcw_at_center)
 
@@ -384,7 +423,7 @@ if __name__ == "__main__":
     # 47.0
 
     print("Computing HCW-Patient contact and Patient-Patient contact for {} consecutive days...".format(simulation_length))
-    hcw_patient_contact_arrays, patient_patient_contact_arrays = get_patient_arrays(simulation_length, n_hcw, max_time, morning, afternoon, n_chair, day, contact_distance)
+    hcw_patient_contact_arrays, patient_patient_contact_arrays = get_patient_arrays(simulation_length, n_hcw, max_time, timestep_at_9am, timestep_at_2pm, n_chair, day, contact_distance)
 
     # Zero out lower triangle
     n_patient = patient_patient_contact_arrays.shape[1]

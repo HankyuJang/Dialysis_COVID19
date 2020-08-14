@@ -24,7 +24,9 @@ class Simulation:
             W = 6,
             T = 7,
             inf = 1,
-            alpha = 0.3, # alpha will be changed for each disease model and for each target R0
+            alpha = 0.001723, # alpha will be changed for each disease model and for each target R0
+            beta = 1.479004, # alpha will be changed for each disease model and for each target R0
+            gamma = 4.9, # alpha will be changed for each disease model and for each target R0
             QC = 1,
             asymp_rate = 0.4,
             asymp_shedding = 0.75,
@@ -46,6 +48,8 @@ class Simulation:
         self.T = T
         self.inf = inf
         self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
         self.QC = QC
         self.asymp_rate = asymp_rate
         self.asymp_shedding = asymp_shedding
@@ -169,26 +173,32 @@ class Simulation:
     # and the index reduce by 1 per day.
     def get_daily_shedding(self, W, T):
         daily_shedding = np.zeros((W + T))
-        if self.Dtype == 2:
-            daily_shedding[T-1] = 1
-            # Infectivity during presymptomatic period
-            for idx in range(T, W + T):
-                # daily_shedding[idx] = 1/7.7 * daily_shedding[idx-1]
-                daily_shedding[idx] = 1/3.0 * daily_shedding[idx-1]
-            # Infectivity during symptomatic period
-            for idx in range(T-2, -1, -1):
-                daily_shedding[idx] = 1/1.5 * daily_shedding[idx+1]
-        # exp/exp: 35% asymptomatic spread
-        elif self.Dtype == 3:
-            daily_shedding[T-1] = 1
-            # Infectivity during presymptomatic period
-            for idx in range(T, W + T):
-                # daily_shedding[idx] = 1/1.62 * daily_shedding[idx-1]
-                daily_shedding[idx] = 1/1.27 * daily_shedding[idx-1]
-            # Infectivity during symptomatic period
-            for idx in range(T-2, -1, -1):
-                daily_shedding[idx] = 1/1.5 * daily_shedding[idx+1]
+        daily_shedding[T-1] = 1
+        # Infectivity during presymptomatic period
+        for idx in range(T, W + T):
+            daily_shedding[idx] = 1/self.beta * daily_shedding[idx-1]
+        # Infectivity during symptomatic period
+        for idx in range(T-2, -1, -1):
+            daily_shedding[idx] = 1/self.gamma * daily_shedding[idx+1]
         return daily_shedding
+        # if self.Dtype == 2:
+            # daily_shedding[T-1] = 1
+            # # Infectivity during presymptomatic period
+            # for idx in range(T, W + T):
+                # daily_shedding[idx] = 1/3.01 * daily_shedding[idx-1]
+            # # Infectivity during symptomatic period
+            # for idx in range(T-2, -1, -1):
+                # daily_shedding[idx] = 1/2.0 * daily_shedding[idx+1]
+        # # exp/exp: 35% asymptomatic spread
+        # elif self.Dtype == 3:
+            # daily_shedding[T-1] = 1
+            # # Infectivity during presymptomatic period
+            # for idx in range(T, W + T):
+                # daily_shedding[idx] = 1/1.246 * daily_shedding[idx-1]
+            # # Infectivity during symptomatic period
+            # for idx in range(T-2, -1, -1):
+                # daily_shedding[idx] = 1/2.0 * daily_shedding[idx+1]
+        # return daily_shedding
 
     # Disease model: note that you need to change exp/exp based on W and T
     def get_D(self):

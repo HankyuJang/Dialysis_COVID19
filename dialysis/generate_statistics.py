@@ -1,7 +1,7 @@
 """
 Author: Hankyu Jang 
 Email: hankyu-jang@uiowa.edu
-Last Modified: July, 2020
+Last Modified: Aug, 2020
 
 Description: This script generates network statistics
 """
@@ -88,6 +88,7 @@ if __name__ == "__main__":
     weighted_degree_array = np.array(list(weighted_degree_dict.values()))
     statistic_array[1] = [np.mean(weighted_degree_array), np.std(weighted_degree_array), np.max(weighted_degree_array)]
     print("weighted degree. mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(weighted_degree_array), np.std(weighted_degree_array), np.max(weighted_degree_array)))
+    print("weighted degree (hrs/day). mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(weighted_degree_array)* 8 / 60 / 60 / 26, np.std(weighted_degree_array)* 8 / 60 / 60 / 26, np.max(weighted_degree_array)* 8 / 60 / 60 / 26))
 
     #degree and weighted degree, just of HCPs
     print()
@@ -98,6 +99,7 @@ if __name__ == "__main__":
     statistic_array[3] = [np.mean(HCP_weighted_degree_array), np.std(HCP_weighted_degree_array), np.max(HCP_weighted_degree_array)]
     print("HCP_degree. mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_degree_array), np.std(HCP_degree_array), np.max(HCP_degree_array)))
     print("HCP_weighted_degree. mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_weighted_degree_array), np.std(HCP_weighted_degree_array), np.max(HCP_weighted_degree_array)))
+    print("HCP_weighted_degree (hrs/day). mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_weighted_degree_array)* 8 / 60 / 60 / 26, np.std(HCP_weighted_degree_array)* 8 / 60 / 60 / 26, np.max(HCP_weighted_degree_array)* 8 / 60 / 60 / 26))
 
     #degree and weighted degree, just of patients
     print()
@@ -108,6 +110,7 @@ if __name__ == "__main__":
     statistic_array[5] = [np.mean(patient_weighted_degree_array), np.std(patient_weighted_degree_array), np.max(patient_weighted_degree_array)]
     print("patient_degree. mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(patient_degree_array), np.std(patient_degree_array), np.max(patient_degree_array)))
     print("patient_weighted_degree. mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(patient_weighted_degree_array), np.std(patient_weighted_degree_array), np.max(patient_weighted_degree_array)))
+    print("patient_weighted_degree (hrs/day). mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(patient_weighted_degree_array)* 8 / 60 / 60 / 26, np.std(patient_weighted_degree_array)* 8 / 60 / 60 / 26, np.max(patient_weighted_degree_array)* 8 / 60 / 60 / 26))
 
     # preprocess for edge weights
     HCP_HCP_edge_weights = []
@@ -127,21 +130,24 @@ if __name__ == "__main__":
     print("weight of HCP-HCP edges")
     HCP_HCP_edge_weights = np.array(HCP_HCP_edge_weights)
     statistic_array[6] = [np.mean(HCP_HCP_edge_weights), np.std(HCP_HCP_edge_weights), np.max(HCP_HCP_edge_weights)]
-    print("patient_degree. mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_HCP_edge_weights), np.std(HCP_HCP_edge_weights), np.max(HCP_HCP_edge_weights)))
+    print("mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_HCP_edge_weights), np.std(HCP_HCP_edge_weights), np.max(HCP_HCP_edge_weights)))
+    print("(hrs/day) mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_HCP_edge_weights)* 8 / 60 / 60 / 26, np.std(HCP_HCP_edge_weights)* 8 / 60 / 60 / 26, np.max(HCP_HCP_edge_weights)* 8 / 60 / 60 / 26))
 
     #mean, max, std dev of weight of HCP-patient edges
     print()
     print("weight of HCP-patient edges")
     HCP_patient_edge_weights = np.array(HCP_patient_edge_weights)
     statistic_array[7] = [np.mean(HCP_patient_edge_weights), np.std(HCP_patient_edge_weights), np.max(HCP_patient_edge_weights)]
-    print("patient_degree. mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_patient_edge_weights), np.std(HCP_patient_edge_weights), np.max(HCP_patient_edge_weights)))
+    print("mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_patient_edge_weights), np.std(HCP_patient_edge_weights), np.max(HCP_patient_edge_weights)))
+    print("(hrs/day) mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(HCP_patient_edge_weights)* 8 / 60 / 60 / 26, np.std(HCP_patient_edge_weights)* 8 / 60 / 60 / 26, np.max(HCP_patient_edge_weights)* 8 / 60 / 60 / 26))
 
     #mean, max, std dev or weight of patient-patient edges
     print()
     print("weight of patient-patient edges")
     patient_patient_edge_weights = np.array(patient_patient_edge_weights)
     statistic_array[8] = [np.mean(patient_patient_edge_weights), np.std(patient_patient_edge_weights), np.max(patient_patient_edge_weights)]
-    print("patient_degree. mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(patient_patient_edge_weights), np.std(patient_patient_edge_weights), np.max(patient_patient_edge_weights)))
+    print("mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(patient_patient_edge_weights), np.std(patient_patient_edge_weights), np.max(patient_patient_edge_weights)))
+    print("(hrs/day) mean, std, max: {:.2f}, {:.2f}, {:.2f}".format(np.mean(patient_patient_edge_weights)* 8 / 60 / 60 / 26, np.std(patient_patient_edge_weights)* 8 / 60 / 60 / 26, np.max(patient_patient_edge_weights)* 8 / 60 / 60 / 26))
 
     df_additional_statistics = pd.DataFrame(data=statistic_array, index=index_list, columns=column_name)
     df_additional_statistics.to_csv("tables/statistics/additional_network_statistics.csv") 

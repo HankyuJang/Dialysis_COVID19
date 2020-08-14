@@ -46,7 +46,7 @@ The shedding models used in the paper are exp/exp (5%) and exp/exp (35%) that ar
 
 ```
 cd ..
-python compute_alpha.py
+python compute_alpha_v2.py
 ```
 
 - Run COVID-19 simulation

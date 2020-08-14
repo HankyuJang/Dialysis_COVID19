@@ -1,11 +1,15 @@
 """
 Author: Hankyu Jang 
 Email: hankyu-jang@uiowa.edu
-Last Modified: Apr, 2020
+Last Modified: Aug, 2020
 
 Description: This script generates tables
 
-Figures are saved in `dialysis/tables/`
+Tables are saved in `dialysis/tables/`
+The table that shows attack rates on B,B+,B++,B+++ that is inserted in the paper is the following two files:
+dialysis/tables/day10/n_total_attack_rate_scenario0.csv
+dialysis/tables/day10/n_total_attack_rate_scenario1.csv
+Note that in these scripts, scenario0 = Scenario 1 and scenario1 = Scenario 2 in the paper
 """
 import argparse
 import numpy as np
@@ -100,6 +104,14 @@ if __name__ == "__main__":
     Bppp_population = npzfile["Bppp_population"]
     Bppp_R0 = npzfile["Bppp_R0"]
     Bppp_generation_time = npzfile["Bppp_generation_time"]
+    npzfile.close()
+
+    npzfile = np.load("dialysis/results/day{}/baseline_scenario{}.npz".format(day, s))
+    B_n_inf_rec = npzfile["B_n_inf_rec"]
+    B_transmission_route = npzfile["B_transmission_route"]
+    B_population = npzfile["B_population"]
+    B_R0 = npzfile["B_R0"]
+    B_generation_time = npzfile["B_generation_time"]
     npzfile.close()
 
     n_repeat = B_R0.shape[0]

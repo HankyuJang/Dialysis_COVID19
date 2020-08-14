@@ -5,11 +5,10 @@ Author: Hankyu Jang
 Email: hankyu-jang@uiowa.edu
 Last Modified: August, 2020
 
-Run simulations on B,B+,B++,B+++ on other days
-
-Run simulations on all interventions in the paper 
-Scenario 1 (infection source = morning patient) 
-Scenario 2 (infection source = morning HCW)
+Run 12 sets of simulations (each set with 500 replicates) on the baseline
+- 2 scenarios: Scenario 1 (infection source = morning patient), Scenario 2 (infection source = morning HCW) 
+- 2 shedding models: exp/exp(20%), exp/exp(60%)
+- 3 Target R0s: 2.0, 2.5, 3.0
 
 Note: This script uses multiprocessing module which runs in many cores.
 Specify the number of cores to use in the `multiprocessing.Pool` method.
@@ -71,7 +70,7 @@ if __name__ == "__main__":
                         help= 'day of csv file that contains the latent positions of hcws')
     parser.add_argument('-d', '--contact_distance', type=int, default=6,
                         help= 'distance threshold (in feet)')
-    parser.add_argument('-cpu', '--cpu', type=int, default=64,
+    parser.add_argument('-cpu', '--cpu', type=int, default=60,
                         help= 'number of cpu to use for simulation')
     args = parser.parse_args()
 
@@ -222,27 +221,6 @@ if __name__ == "__main__":
     B_R0 = np.zeros((repetition, n_Dtype, n_cases))
     B_generation_time = np.zeros((repetition, n_Dtype, n_cases))
 
-    # Bp: social distancing + move chairs apart + surgical masks for everyone
-    Bp_n_inf_rec = np.zeros((repetition, n_Dtype, n_cases, 3, 4, simulation_period))
-    Bp_transmission_route = np.zeros((repetition, n_Dtype, n_cases, 4, simulation_period))
-    Bp_population = np.zeros((repetition, n_Dtype, n_cases, simulation_period))
-    Bp_R0 = np.zeros((repetition, n_Dtype, n_cases))
-    Bp_generation_time = np.zeros((repetition, n_Dtype, n_cases))
-
-    # Bpp: social distancing + move chairs apart + surgical masks for everyone + early replacement
-    Bpp_n_inf_rec = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp, 3, 4, simulation_period))
-    Bpp_transmission_route = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp, 4, simulation_period))
-    Bpp_population = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp, simulation_period))
-    Bpp_R0 = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp))
-    Bpp_generation_time = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp))
-
-    # Bppp: social distancing + move chairs apart + surgical masks for everyone + early replacement + N95 on HCPs for 2 weeks since the symptomatic patient
-    Bppp_n_inf_rec = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp, 3, 4, simulation_period))
-    Bppp_transmission_route = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp, 4, simulation_period))
-    Bppp_population = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp, simulation_period))
-    Bppp_R0 = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp))
-    Bppp_generation_time = np.zeros((repetition, n_Dtype, n_cases, n_k_Bpp))
-
     counter_seed = 0
     # scenario=0: source=patient
     # scenario=1: source=hcw
@@ -309,131 +287,12 @@ if __name__ == "__main__":
                 B_generation_time[:, Dtype_idx, alpha_idx] = generation_time / R0
                 print_results(R0, n_inf_rec, repetition, Dtype, alpha_idx)
 
-                print("*"*40)
-                print("Simulation: Bp: social distancing (25%) + move chairs apart (75%) + surgical masks for everyone")
-                mask_efficacy = np.array([0.4, 0.4, 0.93])
-                intervention[:] = False
-                intervention[0, 2] = True
-                intervention[1, 2] = True
-                hpc = hpc_original
-                hhc = hhc_same_chair + hhc_adj_chair_rr75 + hhc_both_center_rr25 + hhc_other_places_rr25
-                hhc = hhc_expand_dims(hhc, simulation_period)
-                ppc = ppc_rr75
-
-                rd.seed(counter_seed)
-                counter_seed += 1
-
-                pool = multiprocessing.Pool(processes=n_cpu)
-                func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
-                r = pool.map(func, rep)
-                pool.close()
-
-                for i, result in enumerate(r):
-                    n_inf_rec[i] = result[0]
-                    transmission_route[i] = result[1]
-                    population[i] = result[2]
-                    R0[i] = result[3]
-                    generation_time[i] = result[4]
-
-                Bp_n_inf_rec[:, Dtype_idx, alpha_idx, :, :, :] = n_inf_rec
-                Bp_transmission_route[:, Dtype_idx, alpha_idx, :, :] = transmission_route
-                Bp_population[:, Dtype_idx, alpha_idx, :] = population
-                Bp_R0[:, Dtype_idx, alpha_idx] = R0
-                Bp_generation_time[:, Dtype_idx, alpha_idx] = generation_time / R0
-                print_results(R0, n_inf_rec, repetition, Dtype, alpha_idx)
-
-                print("*"*40)
-                print("Simulation: Bpp: social distancing (25%) + move chairs apart (75%) + surgical masks for everyone + one sympatomatic patient isolation + early replacement of k HCPs")
-                mask_efficacy = np.array([0.4, 0.4, 0.93])
-                intervention[:] = False
-                intervention[0,3] = True
-                intervention[1,1] = True
-                intervention[0,2] = True
-                intervention[1,2] = True
-                hpc = hpc_original
-                hhc = hhc_same_chair + hhc_adj_chair_rr75 + hhc_both_center_rr25 + hhc_other_places_rr25
-                hhc = hhc_expand_dims(hhc, simulation_period)
-                ppc = ppc_rr75
-                for k_idx, k in enumerate(k_list_Bpp):
-                    rd.seed(counter_seed)
-                    counter_seed += 1
-
-                    pool = multiprocessing.Pool(processes=n_cpu)
-                    func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
-                    r = pool.map(func, rep)
-                    pool.close()
-
-                    for i, result in enumerate(r):
-                        n_inf_rec[i] = result[0]
-                        transmission_route[i] = result[1]
-                        population[i] = result[2]
-                        R0[i] = result[3]
-                        generation_time[i] = result[4]
-
-                    Bpp_n_inf_rec[:, Dtype_idx, alpha_idx, k_idx, :, :, :] = n_inf_rec
-                    Bpp_transmission_route[:, Dtype_idx, alpha_idx, k_idx, :, :] = transmission_route
-                    Bpp_population[:, Dtype_idx, alpha_idx, k_idx, :] = population
-                    Bpp_R0[:, Dtype_idx, alpha_idx, k_idx] = R0
-                    Bpp_generation_time[:, Dtype_idx, alpha_idx, k_idx] = generation_time / R0
-                    print_results(R0, n_inf_rec, repetition, Dtype, alpha_idx)
-
-                print("*"*40)
-                print("Simulation: Bppp: social distancing (25%) + move chairs apart (75%) + surgical masks for everyone + one sympatomatic patient isolation + early replacement of k HCPs + N95 for HCPs for 2 weeks when the first patient start showing symptoms")
-                mask_efficacy = np.array([0.4, 0.4, 0.93])
-                intervention[:] = False
-                intervention[0,3] = True
-                intervention[1,1] = True
-                intervention[0,2] = True
-                intervention[1,2] = True
-                intervention[2,2] = True
-                hpc = hpc_original
-                hhc = hhc_same_chair + hhc_adj_chair_rr75 + hhc_both_center_rr25 + hhc_other_places_rr25
-                hhc = hhc_expand_dims(hhc, simulation_period)
-                ppc = ppc_rr75
-                for k_idx, k in enumerate(k_list_Bpp):
-                    rd.seed(counter_seed)
-                    counter_seed += 1
-
-                    pool = multiprocessing.Pool(processes=n_cpu)
-                    func = partial(simulate, W, T, inf, alpha, beta, gamma, QC, asymp_rate, asymp_shedding, QS, QT, Dtype, community_attack_rate, k, mask_efficacy, intervention, hhc, hpc, ppc, morning_patients, morning_hcws)
-                    r = pool.map(func, rep)
-                    pool.close()
-
-                    for i, result in enumerate(r):
-                        n_inf_rec[i] = result[0]
-                        transmission_route[i] = result[1]
-                        population[i] = result[2]
-                        R0[i] = result[3]
-                        generation_time[i] = result[4]
-
-                    Bppp_n_inf_rec[:, Dtype_idx, alpha_idx, k_idx, :, :, :] = n_inf_rec
-                    Bppp_transmission_route[:, Dtype_idx, alpha_idx, k_idx, :, :] = transmission_route
-                    Bppp_population[:, Dtype_idx, alpha_idx, k_idx, :] = population
-                    Bppp_R0[:, Dtype_idx, alpha_idx, k_idx] = R0
-                    Bppp_generation_time[:, Dtype_idx, alpha_idx, k_idx] = generation_time / R0
-                    print_results(R0, n_inf_rec, repetition, Dtype, alpha_idx)
-
-        np.savez("dialysis/results/day{}/B_Bp_Bpp_Bppp_scenario{}".format(day, scenario),
+        np.savez("dialysis/results/day{}/baseline_scenario{}".format(day, scenario),
                 B_n_inf_rec = B_n_inf_rec,
                 B_transmission_route = B_transmission_route,
                 B_population = B_population,
                 B_R0 = B_R0,
-                B_generation_time = B_generation_time,
-                Bp_n_inf_rec = Bp_n_inf_rec,
-                Bp_transmission_route = Bp_transmission_route,
-                Bp_population = Bp_population,
-                Bp_R0 = Bp_R0,
-                Bp_generation_time = Bp_generation_time,
-                Bpp_n_inf_rec = Bpp_n_inf_rec,
-                Bpp_transmission_route = Bpp_transmission_route,
-                Bpp_population = Bpp_population,
-                Bpp_R0 = Bpp_R0,
-                Bpp_generation_time = Bpp_generation_time,
-                Bppp_n_inf_rec = Bppp_n_inf_rec,
-                Bppp_transmission_route = Bppp_transmission_route,
-                Bppp_population = Bppp_population,
-                Bppp_R0 = Bppp_R0,
-                Bppp_generation_time = Bppp_generation_time
+                B_generation_time = B_generation_time
                 )
             ####################################################################################################
             # Interventon on HCW end

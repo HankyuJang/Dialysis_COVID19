@@ -1,9 +1,9 @@
 """
 Author: Hankyu Jang 
 Email: hankyu-jang@uiowa.edu
-Last Modified: July, 2020
+Last Modified: Aug, 2020
 
-Description: This script prints numbers for paper
+Description: This script prints numbers (e.g. infection count, attack rate, tranmission route percentages, etc) for paper
 
 """
 import argparse
@@ -95,13 +95,14 @@ if __name__ == "__main__":
     Bppp_generation_time = npzfile["Bppp_generation_time"]
     npzfile.close()
 
-    # npzfile = np.load("dialysis/results/day{}/final_N95_adj_patients_scenario{}.npz".format(day, s))
-    # Bpppp_n_inf_rec = npzfile["Bpppp_n_inf_rec"]
-    # Bpppp_transmission_route = npzfile["Bpppp_transmission_route"]
-    # Bpppp_population = npzfile["Bpppp_population"]
-    # Bpppp_R0 = npzfile["Bpppp_R0"]
-    # Bpppp_generation_time = npzfile["Bpppp_generation_time"]
-    # npzfile.close()
+    npzfile = np.load("dialysis/results/day{}/baseline_scenario{}.npz".format(day, s))
+    B_n_inf_rec = npzfile["B_n_inf_rec"]
+    B_transmission_route = npzfile["B_transmission_route"]
+    B_population = npzfile["B_population"]
+    B_R0 = npzfile["B_R0"]
+    B_generation_time = npzfile["B_generation_time"]
+    npzfile.close()
+
     ############################################################################################################3
     # Preprocess some of the result tables
     ############################################################################################################3
@@ -224,8 +225,8 @@ if __name__ == "__main__":
 
     np.set_printoptions(1)
     n_simulations = B_T_cum_infection.shape[0]
-    DM_idx = 3 # this is exp/exp 35% model
-    R0_idx = 2 # this is R0 of 3
+    DM_idx = 3 # this is exp/exp 60% model
+    R0_idx = 2 # this is R0 of 3.0
 
     print()
     print("*"*20)
@@ -237,15 +238,23 @@ if __name__ == "__main__":
     print("\npercentage reduction in attack rate in Bppp: {:.1f}".format(percentage_reduction(start_value, final_value)))
 
     Bppp_T_cum_infection = Bppp_T_cum_infection.astype(int)
-    print("Likelihood of no additional infection: {:.1f}".format(100 * (Bppp_T_cum_infection[:,3,2,0,-1] == 1).sum() / n_simulations))
+    print("Likelihood of no additional infection in B: {:.1f}".format(100 * (B_T_cum_infection[:,3,2,-1] == 1).sum() / n_simulations))
+    print("Likelihood of no additional infection in Bppp: {:.1f}".format(100 * (Bppp_T_cum_infection[:,3,2,0,-1] == 1).sum() / n_simulations))
 
     print()
     print("*"*20)
     print("Result")
 
+    print("Fraction of simulations near 100% attack rate in B")
+    n_repeat = B_R0.shape[0] # n_repeat=500
+    B_end_infection = B_T_infection[:,DM_idx,R0_idx,:].sum(axis=-1)
+    print("Simulations with >= 49 infections (>= 96.1% attack rate): {:.1f}".format(100*(B_end_infection >= 49).sum() / n_repeat))
+
     B_TR = B_transmission_route[:,DM_idx,R0_idx,:,:].sum(axis=(0,-1))
-    print("transmission route ratio: {}".format(100 * B_TR / B_TR.sum()))
+    transmission_route_ratio = 100 * B_TR / B_TR.sum()
+    print("transmission route ratio: {}".format(transmission_route_ratio))
     print("h->p, p->h, h->h, p->p")
+    print("HCPs are source of {:.1f}% infections".format(transmission_route_ratio[0] + transmission_route_ratio[2]))
 
     print("\nSelf-isolation, active surveillance")
     print("[exp/exp 5%]")
@@ -260,6 +269,9 @@ if __name__ == "__main__":
     print("attack rate P2 {:.1f}".format(100*np.mean(P2_T_cum_attack_rate[:,DM_idx,R0_idx,-1])))
     print("attack rate H2P2v2 {:.1f}".format(100*np.mean(H2P2v2_T_cum_attack_rate[:,DM_idx,R0_idx,-1])))
     print("attack rate H2P2 {:.1f}".format(100*np.mean(H2P2_T_cum_attack_rate[:,DM_idx,R0_idx,-1])))
+    start_value = 100*np.mean(B_T_cum_attack_rate[:,DM_idx,R0_idx,-1])
+    final_value = 100*np.mean(H2P2_T_cum_attack_rate[:,DM_idx,R0_idx,-1])
+    print("percentage reduction in attack rate in H2P2: {:.1f}".format(percentage_reduction(start_value, final_value)))
     
     print("\nMoving chairs apart")
     print("attack rate N1 {}".format(100*np.mean(N1_T_cum_attack_rate[:,DM_idx,R0_idx,:,-1], axis=0)))
@@ -279,19 +291,21 @@ if __name__ == "__main__":
     # print("rows: exp/exp(5%), exp/exp(35%), cols: R0 2, 2.5, 3")
     # print("{}".format(np.mean(Bpppp_T_cum_attack_rate[:,2:,:,0,-1], axis=0) * 100))
 
-    B_end_infection = B_T_infection[:,DM_idx,R0_idx,:].sum(axis=-1)
     Bp_end_infection = Bp_T_infection[:,DM_idx,R0_idx,:].sum(axis=-1)
     Bpp_end_infection = Bpp_T_infection[:,DM_idx,R0_idx,0,:].sum(axis=-1)
     Bppp_end_infection = Bppp_T_infection[:,DM_idx,R0_idx,0,:].sum(axis=-1)
-    # print("B: 51 infection at the end: {} ({})".format((B_end_infection==51).sum(), (B_end_infection==51).sum() / n_repeat))
-    # print("B: 50 infection at the end: {} ({})".format((B_end_infection==50).sum(), (B_end_infection==50).sum() / n_repeat))
+    #print("B: 51 infection at the end: {} ({})".format((B_end_infection==51).sum(), (B_end_infection==51).sum() / n_repeat))
+    #print("B: 50 infection at the end: {} ({})".format((B_end_infection==50).sum(), (B_end_infection==50).sum() / n_repeat))
+    print("B: >= 46 infection at the end (>= 90% attack rate) : {} ({})".format((B_end_infection>=46).sum(), (B_end_infection>=46).sum() / n_repeat))
+    print("B: == 1 infection at the end (no transmission) : {} ({})".format((B_end_infection==1).sum(), (B_end_infection==1).sum() / n_repeat))
+    print("Bppp: == 1 infection at the end (no transmission) : {} ({})".format((Bppp_end_infection==1).sum(), (Bppp_end_infection==1).sum() / n_repeat))
+    print("Bpp: == 1 infection at the end (no transmission) : {} ({})".format((Bpp_end_infection==1).sum(), (Bpp_end_infection==1).sum() / n_repeat))
 
     # B2p_end_infection = B2p_T_infection[:,2,2,:].sum(axis=-1)
     # print("B2+: 1 infection at the end: {} ({})".format((B2p_end_infection==1).sum(), (B2p_end_infection==1).sum() / n_repeat))
     # print("B2+: >= 39 infection at the end: {} ({})".format((B2p_end_infection>=39).sum(), (B2p_end_infection>=39).sum() / n_repeat))
 
     # B2pp_end_infection = B2pp_T_infection[:,2,2,:].sum(axis=-1)
-    # B2ppH1_end_infection = B2ppH1_T_infection[:,2,2,:].sum(axis=-1)
 
     # H2P2_end_infection = H2P2_T_infection[:,2,2,:].sum(axis=-1)
     # H12P2_end_infection = H12P2_T_infection[:,2,2,:].sum(axis=-1)

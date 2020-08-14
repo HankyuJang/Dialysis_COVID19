@@ -6,6 +6,7 @@ Email: hankyu-jang@uiowa.edu
 Last Modified: Aug, 2020
 
 Computes alpha to match the desired R0.
+Note that different shedding models would have different volume when targetted for the same target R0.
 """
 
 import argparse
@@ -30,20 +31,21 @@ def get_D(Dtype, W, T):
         # Infectivity during incubation period
         for idx in range(T, W + T):
             # daily_shedding[idx] = 1/7.7 * daily_shedding[idx-1]
-            daily_shedding[idx] = 1/3.0 * daily_shedding[idx-1]
+            daily_shedding[idx] = 1/3.01 * daily_shedding[idx-1]
         # Infectivity during infectious period
         for idx in range(T-2, -1, -1):
-            daily_shedding[idx] = 1/1.5 * daily_shedding[idx+1]
+            # daily_shedding[idx] = 1/1.5 * daily_shedding[idx+1]
+            daily_shedding[idx] = 1/2.0 * daily_shedding[idx+1]
     # exp/exp: 35% asymptomatic spread
     elif Dtype == 3:
         daily_shedding[T-1] = 1
         # Infectivity during incubation period
         for idx in range(T, W + T):
             # daily_shedding[idx] = 1/1.48 * daily_shedding[idx-1]
-            daily_shedding[idx] = 1/1.27 * daily_shedding[idx-1]
+            daily_shedding[idx] = 1/1.246 * daily_shedding[idx-1]
         # Infectivity during infectious period
         for idx in range(T-2, -1, -1):
-            daily_shedding[idx] = 1/1.5 * daily_shedding[idx+1]
+            daily_shedding[idx] = 1/2.0 * daily_shedding[idx+1]
     return daily_shedding
 
 def compute_R0(alpha, daily_shedding, hpc, ppc, n_mp, n_hcw, n_patient):
