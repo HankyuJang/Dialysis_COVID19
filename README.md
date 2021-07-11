@@ -1,6 +1,8 @@
 # COVID-19 Modeling and Non-Pharmaceutical Interventions in a Dialysis Unit
 
-This document provides a step-by-step guide to replicate results in the paper.
+__Paper__: Jang H, Polgreen PM, Segre AM, Pemmaraju SV (2021) COVID-19 modeling and non-pharmaceutical interventions in an outpatient dialysis unit. PLoS Comput Biol 17(7): e1009177. https://doi.org/10.1371/journal.pcbi.1009177
+
+This document provides a step-by-step guide to replicate results in the [paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1009177).
 
 ## Installation
 
@@ -143,7 +145,12 @@ cd dialysis
 ```
 
 ## Cite
-This project is currently in submission for the peer-review for the PLOS Computational Biology.
+Please cite our paper if you use the code or the dataset.
 ```
-...
+@article{jang2021covid,
+  title={COVID-19 modeling and non-pharmaceutical interventions in an outpatient dialysis unit},
+  author={Jang, Hankyu and Polgreen, Philip M. and Segre, Alberto M. and Pemmaraju, Sriram V.},
+  journal={PLoS Computational Biology},
+  year={2021}
+}
 ```
